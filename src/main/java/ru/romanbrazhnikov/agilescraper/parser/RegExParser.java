@@ -1,4 +1,4 @@
-package ru.romanbrazhnikov.parser;
+package ru.romanbrazhnikov.agilescraper.parser;
 
 import io.reactivex.Single;
 

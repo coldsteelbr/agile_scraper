@@ -1,10 +1,9 @@
-package ru.romanbrazhnikov.parser;
+package ru.romanbrazhnikov.agilescraper.parser;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ParseResult {
+
     private List<Map<String, String>> mResult = new ArrayList<>();
 
     public List<Map<String, String>> getResult() {
@@ -21,5 +20,13 @@ public class ParseResult {
 
     public boolean isEmpty() {
         return mResult.size() == 0;
+    }
+
+    public Set<String> getMatchingNames(){
+        Set<String> toReturn = new HashSet<>();
+        for(Map<String, String> currentRow : mResult){
+            toReturn.addAll(currentRow.keySet());
+        }
+        return toReturn;
     }
 }

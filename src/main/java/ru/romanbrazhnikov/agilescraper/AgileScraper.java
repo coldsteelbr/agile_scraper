@@ -1,11 +1,11 @@
 package ru.romanbrazhnikov.agilescraper;
 
-import ru.romanbrazhnikov.parser.ICommonParser;
-import ru.romanbrazhnikov.parser.RegExParser;
+import ru.romanbrazhnikov.agilescraper.parser.ICommonParser;
+import ru.romanbrazhnikov.agilescraper.parser.RegExParser;
+import ru.romanbrazhnikov.agilescraper.resultsaver.OnSuccessParseConsumerCSV;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class AgileScraper {
 
@@ -25,6 +25,7 @@ public class AgileScraper {
                     "  </tr>\n" +
                     "</table>\n";
 
+    private final String mDestinationName = "my_local_db";
 
     public void run() {
         System.out.println("Agile scraper ran");
@@ -38,13 +39,6 @@ public class AgileScraper {
         parser.setMatchNames(matchNames);
         parser.setPattern(sValidPattern);
         parser.setSource(stringToParse);
-        parser.parse().subscribe(parseResult -> {
-            for(Map<String, String> currentRow : parseResult.getResult()){
-                for(Map.Entry<String, String> curEntry : currentRow.entrySet()){
-                    System.out.println(curEntry.getValue() + " ");
-                }
-                System.out.println();
-            }
-        });
+        parser.parse().subscribe(new OnSuccessParseConsumerCSV(mDestinationName), Throwable::printStackTrace);
     }
 }
