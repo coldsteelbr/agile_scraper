@@ -63,7 +63,7 @@ public class RegExParser implements ICommonParser {
             }
 
             if (mResultTable.isEmpty()) {
-                emitter.onError(new Exception("Empty result"));
+                emitter.onError(new Exception("RegExParser: Empty result"));
             }
             emitter.onSuccess(mResultTable);
 

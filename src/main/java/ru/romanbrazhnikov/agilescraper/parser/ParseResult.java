@@ -23,7 +23,7 @@ public class ParseResult {
     }
 
     public Set<String> getMatchingNames(){
-        Set<String> toReturn = new HashSet<>();
+        Set<String> toReturn = new LinkedHashSet<>();
         for(Map<String, String> currentRow : mResult){
             toReturn.addAll(currentRow.keySet());
         }
