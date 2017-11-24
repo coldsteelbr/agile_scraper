@@ -10,6 +10,7 @@ import ru.romanbrazhnikov.agilescraper.sourceprovider.ICommonSourceProvider;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public class AgileScraper {
 
@@ -47,14 +48,19 @@ public class AgileScraper {
     public void run() {
         System.out.println("Agile scraper ran");
 
+        // single source provider
         String stringToParse = sValidSource;
-
         String baseUrl = "http://spran.ru/sell/comm.html";
         String clientEcoding = "utf8";
         HttpMethods method = HttpMethods.GET;
         String params = "currency=1&costMode=1&cities%5B0%5D=21&page=2";
-        HttpSourceProvider sourceProvider = new HttpSourceProvider(baseUrl, clientEcoding, method,params);
+        HttpSourceProvider sourceProvider = new HttpSourceProvider();
+        sourceProvider.setBaseUrl(baseUrl);
+        sourceProvider.setClientCharset(clientEcoding);
+        sourceProvider.setHttpMethod(method);
+        sourceProvider.setQueryParamString(params);
 
+        // parser
         ICommonParser parser = new RegExParser();
         List<String> matchNames = new LinkedList<>();
         matchNames.add("TYPE");
@@ -62,6 +68,36 @@ public class AgileScraper {
         matchNames.add("SQUARE");
         matchNames.add("TOTALPRICE");
         matchNames.add("CONTACT");
+
+        // page count
+        final String pageNumName = "PAGENUM";
+        int firstPageNum = 1;
+        int pageStep = 1;
+        String maxPagePattern = "page\\s*=\\s*(?<PAGENUM>[0-9]+?)\">\\s*[0-9]+\\s*<";
+        // requesting first page for
+        HttpSourceProvider pageCountSourceProvider = new HttpSourceProvider();
+        pageCountSourceProvider.setBaseUrl(baseUrl);
+        pageCountSourceProvider.setQueryParamString(params);
+
+        pageCountSourceProvider.requestSource()
+                .subscribe(source -> {
+                    List<String> maxPageNumName = new ArrayList<>();
+                    maxPageNumName.add(pageNumName);
+                    parser.setMatchNames(maxPageNumName);
+                    parser.setPattern(maxPagePattern);
+                    parser.setSource(source);
+                    parser.parse().map(parseResult -> {
+                        int curMax;
+                        int totalMax = 0;
+                        for(Map<String, String> curRow : parseResult.getResult()){
+                            curMax = Integer.parseInt(curRow.get(pageNumName));
+                            totalMax = curMax > totalMax ? curMax : totalMax;
+                        }
+                        return totalMax;
+                    }).subscribe(totalMax -> {
+                        System.out.println("MaxPage: " + totalMax);
+                    });
+                });
 
 
         sourceProvider.requestSource().subscribe(s -> {

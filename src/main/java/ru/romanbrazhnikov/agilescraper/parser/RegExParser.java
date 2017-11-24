@@ -51,9 +51,6 @@ public class RegExParser implements ICommonParser {
             Matcher m = mPattern.matcher(mSource);
             mResultTable.clear();
 
-            // TODO: REMOVE SLEEPING
-            MILLISECONDS.sleep(mDelayInMillis);
-
             while (m.find()) {
                 Map<String, String> currentResultRow = new HashMap<>();
                 for (String currentName : mGroupNames) {

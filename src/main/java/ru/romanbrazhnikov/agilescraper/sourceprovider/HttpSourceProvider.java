@@ -21,15 +21,24 @@ public class HttpSourceProvider {
     private List<String> mCookiesToRequest;
     private List<String> mCookiesFromResponse;
 
-    private String mClientCharSet;
+    private String mClientCharset;
     private String mServerEncoding = "utf-8";
-    private HttpMethods mHttpMethod;
+    private HttpMethods mHttpMethod = HttpMethods.GET;
     private String mQueryParamString;
 
-    public HttpSourceProvider(String url, String clientCharSet, HttpMethods method, String queryParamString) {
-        mBaseUrl = url;
-        mClientCharSet = clientCharSet;
-        mHttpMethod = method;
+    public void setBaseUrl(String baseUrl) {
+        mBaseUrl = baseUrl;
+    }
+
+    public void setClientCharset(String clientCharset) {
+        mClientCharset = clientCharset;
+    }
+
+    public void setHttpMethod(HttpMethods httpMethod) {
+        mHttpMethod = httpMethod;
+    }
+
+    public void setQueryParamString(String queryParamString) {
         mQueryParamString = queryParamString;
     }
 
@@ -53,12 +62,12 @@ public class HttpSourceProvider {
                         myURL = new URL(mBaseUrl);
                         httpConnection = (HttpURLConnection) myURL.openConnection();
                         httpConnection.setDoOutput(true); // Triggers POST.
-                        httpConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + mClientCharSet);
+                        httpConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + mClientCharset);
                         addCookiesIfAny(httpConnection);
 
                         // Sending POST form
                         try (OutputStream output = httpConnection.getOutputStream()) {
-                            output.write(mQueryParamString.getBytes(mClientCharSet));
+                            output.write(mQueryParamString.getBytes(mClientCharset));
                         }
 
                         break;
