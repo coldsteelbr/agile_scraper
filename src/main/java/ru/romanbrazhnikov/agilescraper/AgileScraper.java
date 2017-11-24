@@ -7,34 +7,12 @@ import ru.romanbrazhnikov.agilescraper.parser.RegExParser;
 import ru.romanbrazhnikov.agilescraper.resultsaver.OnSuccessParseConsumerCSV;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpSourceProvider;
-import ru.romanbrazhnikov.agilescraper.sourceprovider.ICommonSourceProvider;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class AgileScraper {
-
-    private final String sValidPattern
-            = "<td[^>]*>\\s*(?<LEFT>.*?)\\s*</td>\\s*"
-            + "<td[^>]*>\\s*(?<RIGHT>.*?)\\s*</td>\\s*";
-
-    private final String sValidSource =
-            "<table>\n" +
-                    "  <tr>\n" +
-                    "    <td class=\"left\">Car: </td>\n" +
-                    "    <td>Mazda</td>\n" +
-                    "  </tr>\n" +
-                    "  <tr>\n" +
-                    "    <td class=\"left\">Glasses: </td>\n" +
-                    "    <td>Optic 7</td>\n" +
-                    "  </tr>\n" +
-                    "  <tr>\n" +
-                    "    <td class=\"left\">Empty: </td>\n" +
-                    "    <td></td>\n" +
-                    "  </tr>\n" +
-                    "</table>\n";
 
     private final String mSpranCommPattern =
             "<tr[^>]*>\\s*\n" +
@@ -46,22 +24,45 @@ public class AgileScraper {
                     "<td[^>]*>\\s*(?<CONTACT>.*?)\\s*</td>\\s*";
 
     private final String mDestinationName = "my_local_db";
+    private final String paramPage = "{[PAGE]}";
 
-    public void run() {
-        final String paramPage = "{[PAGE]}";
-        System.out.println("Agile scraper ran");
-
-        // single source provider
-        String stringToParse = sValidSource;
-        String baseUrl = "http://spran.ru/sell/comm.html";
+    class PrimitiveConfiguration {
+        // reader
+        String baseUrl;
         String clientEcoding = "utf8";
         HttpMethods method = HttpMethods.GET;
-        String params = "currency=1&costMode=1&cities%5B0%5D=21&page=" + paramPage;
-        HttpSourceProvider sourceProvider = new HttpSourceProvider();
-        sourceProvider.setBaseUrl(baseUrl);
-        sourceProvider.setClientCharset(clientEcoding);
-        sourceProvider.setHttpMethod(method);
-        sourceProvider.setQueryParamString(params.replace(paramPage, "1"));
+        String params;
+        long delayInMillis = 334;
+
+        // markers
+        Map<String, String> markers = new HashMap<>();
+
+
+        // max page request
+        String maxPageBaseUrl;
+        String maxPageParams;
+        HttpMethods maxPageMethod = HttpMethods.GET;
+    }
+
+    public void run() {
+
+        System.out.println("Agile scraper ran");
+
+        // creating primitive configuration
+        //      Spran comm config
+        PrimitiveConfiguration spranCommConfig = new PrimitiveConfiguration();
+        spranCommConfig.baseUrl = "http://spran.ru/sell/comm.html";
+        spranCommConfig.params = "currency=1&costMode=1&cities%5B0%5D=21&page=" + paramPage;
+        spranCommConfig.maxPageBaseUrl = "http://spran.ru/sell/comm.html?";
+        spranCommConfig.maxPageParams = "currency=1&costMode=1&cities%5B0%5D=21&page=1";
+        spranCommConfig.markers.put("DISTRICT", "Октярбрьский");
+        spranCommConfig.markers.put("CITY", "Новосибирск");
+
+        HttpSourceProvider spranCommSourceProvider = new HttpSourceProvider();
+        spranCommSourceProvider.setBaseUrl(spranCommConfig.baseUrl);
+        spranCommSourceProvider.setClientCharset(spranCommConfig.clientEcoding);
+        spranCommSourceProvider.setHttpMethod(spranCommConfig.method);
+        spranCommSourceProvider.setQueryParamString(spranCommConfig.params.replace(paramPage, "1"));
 
         // parser
         ICommonParser parser = new RegExParser();
@@ -76,11 +77,11 @@ public class AgileScraper {
         final String pageNumName = "PAGENUM";
         int firstPageNum = 1;
         int pageStep = 1;
-        String maxPagePattern = "page\\s*=\\s*(?<PAGENUM>[0-9]+?)\">\\s*[0-9]+\\s*<";
+        String maxPagePattern = "page\\s*=\\s*(?<" + pageNumName + ">[0-9]+?)\">\\s*[0-9]+\\s*<";
         // requesting first page for
         HttpSourceProvider pageCountSourceProvider = new HttpSourceProvider();
-        pageCountSourceProvider.setBaseUrl(baseUrl);
-        pageCountSourceProvider.setQueryParamString(params);
+        pageCountSourceProvider.setBaseUrl(spranCommConfig.maxPageBaseUrl);
+        pageCountSourceProvider.setQueryParamString(spranCommConfig.maxPageParams);
 
         List<Integer> tempIntLst = new ArrayList<>();
         pageCountSourceProvider.requestSource()
@@ -93,7 +94,7 @@ public class AgileScraper {
                     parser.parse().map(parseResult -> {
                         int curMax;
                         int totalMax = 0;
-                        for(Map<String, String> curRow : parseResult.getResult()){
+                        for (Map<String, String> curRow : parseResult.getResult()) {
                             curMax = Integer.parseInt(curRow.get(pageNumName));
                             totalMax = curMax > totalMax ? curMax : totalMax;
                         }
@@ -105,13 +106,28 @@ public class AgileScraper {
 
         // read all pages
         Consumer<ParseResult> onSuccessConsumer = new OnSuccessParseConsumerCSV(mDestinationName);
-        for(int i = firstPageNum; i <= maxPageValue; i++) {
-            sourceProvider.setQueryParamString(params.replace(paramPage,String.valueOf(i)));
-            sourceProvider.requestSource().subscribe(s -> {
+        for (int i = firstPageNum; i <= maxPageValue; i++) {
+            spranCommSourceProvider.setQueryParamString(spranCommConfig.params.replace(paramPage, String.valueOf(i)));
+            try {
+                MILLISECONDS.sleep(spranCommConfig.delayInMillis);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            spranCommSourceProvider.requestSource().subscribe(s -> {
                 parser.setMatchNames(matchNames);
                 parser.setPattern(mSpranCommPattern);
                 parser.setSource(s);
-                parser.parse().subscribe(onSuccessConsumer, Throwable::printStackTrace);
+                parser.parse()
+                        .map(parseResult -> {
+                            // ADDING MARKERS
+                            for (Map<String, String> curRow : parseResult.getResult()) {
+                                for(Map.Entry<String, String> curMarker: spranCommConfig.markers.entrySet()){
+                                    curRow.put(curMarker.getKey(), curMarker.getValue());
+                                }
+                            }
+                            return parseResult;
+                        })
+                        .subscribe(onSuccessConsumer, Throwable::printStackTrace);
             });
         }
 
