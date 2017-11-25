@@ -59,9 +59,6 @@ public class RegExParser implements ICommonParser {
                 mResultTable.addRow(currentResultRow);
             }
 
-            if (mResultTable.isEmpty()) {
-                emitter.onError(new Exception("RegExParser: Empty result"));
-            }
             emitter.onSuccess(mResultTable);
 
         });
