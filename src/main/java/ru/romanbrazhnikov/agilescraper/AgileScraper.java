@@ -10,7 +10,7 @@ import ru.romanbrazhnikov.agilescraper.requestarguments.Values;
 import ru.romanbrazhnikov.agilescraper.resultsaver.OnSuccessParseConsumerCSV;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpSourceProvider;
-import ru.romanbrazhnikov.agilescraper.sourcereader.ParamStringProvider;
+import ru.romanbrazhnikov.agilescraper.sourcereader.ArgumentedParamString;
 
 import java.util.*;
 
@@ -137,8 +137,9 @@ public class AgileScraper {
 
 
         // for all request arguments
-        while (spranCommConfig.mRequestArguments.paramProvider.hasNext()) {
-            String currentParamString = spranCommConfig.mRequestArguments.paramProvider.getNext();
+        while (spranCommConfig.mRequestArguments.paramProvider.generateNext()) {
+            ArgumentedParamString currentArgString =spranCommConfig.mRequestArguments.paramProvider.getCurrent();
+            String currentParamString = currentArgString.mParamString;
             // read all pages
             Consumer<ParseResult> onSuccessConsumer = new OnSuccessParseConsumerCSV(mDestinationName);
             for (int i = firstPageNum; i <= maxPageValue; i += pageStep) {
@@ -154,8 +155,12 @@ public class AgileScraper {
                     parser.setSource(s);
                     parser.parse()
                             .map(parseResult -> {
-                                // ADDING MARKERS
+                                // ADDING MARKERS and ARGS
                                 for (Map<String, String> curRow : parseResult.getResult()) {
+                                    for(Map.Entry<String, String> curArg : currentArgString.mFieldsArguments.entrySet()){
+                                        curRow.put(curArg.getKey(), curArg.getValue());
+                                    }
+
                                     for (Map.Entry<String, String> curMarker : spranCommConfig.markers.entrySet()) {
                                         curRow.put(curMarker.getKey(), curMarker.getValue());
                                     }
@@ -165,6 +170,6 @@ public class AgileScraper {
                             .subscribe(onSuccessConsumer, Throwable::printStackTrace);
                 });
             } // for firstPageNum
-        }// while hasNext
+        }// while generateNext
     } // run()
 }
