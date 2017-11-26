@@ -54,7 +54,17 @@ public class RegExParser implements ICommonParser {
             while (m.find()) {
                 Map<String, String> currentResultRow = new HashMap<>();
                 for (String currentName : mGroupNames) {
-                    currentResultRow.put(currentName, m.group(currentName));
+                    try {
+                        currentResultRow.put(currentName, m.group(currentName));
+                    }catch (Exception e){
+                        emitter.onError(
+                                new Exception(
+                                        "Curname:" + currentName +
+                                        ", Source: " + mSource +
+                                        ", mPatternRegEx:" + mPatternRegEx +
+                                        ", " + e.getMessage()
+                                ));
+                    }
                 }
                 mResultTable.addRow(currentResultRow);
             }

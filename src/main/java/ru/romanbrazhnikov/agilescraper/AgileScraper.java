@@ -18,14 +18,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class AgileScraper {
 
-    private final String mSpranCommPattern =
-            "<tr[^>]*>\\s*\n" +
-                    "<td[^>]*>\\s*(?<TYPE>.*?)\\s*</td>\\s*\n" +
-                    "<td[^>]*>\\s*(?:.*?)</td>\\s*\n" +
-                    "<td[^>]*>\\s*<a[^>]*>\\s*(?<ADDRESS>.*?)\\s*</a>\\s*</td>\\s*\n" +
-                    "<td[^>]*>\\s*<span[^>]*>\\s*<span[^>]*>\\s*(?<SQUARE>.*?)\\s*</span>\\s*</span>\\s*</td>\\s*\n" +
-                    "<td[^>]*>\\s*<span[^>]*>\\s*(?<TOTALPRICE>.*?)\\s*</span>\\s*(?:.*?)</td>\\s*\n" +
-                    "<td[^>]*>\\s*(?<CONTACT>.*?)\\s*</td>\\s*";
 
     private final String mDestinationName = "my_local_db";
     private final String paramPage = "{[PAGE]}";
@@ -48,7 +40,11 @@ public class AgileScraper {
         // request args
         RequestArguments mRequestArguments = new RequestArguments();
 
+        String mFirstLevelPattern;
 
+        String mSecondLevelPattern;
+        String secondLevelName = "SECONDLEVEL";
+        String secondLevelBaseUrl;
     }
 
     public void run() {
@@ -62,7 +58,19 @@ public class AgileScraper {
         PrimitiveConfiguration spranCommConfig = new PrimitiveConfiguration();
         spranCommConfig.baseUrl = "http://spran.ru/sell/comm.html";
         spranCommConfig.requestParams = paramString;
+        spranCommConfig.mFirstLevelPattern =
+                "<tr[^>]*>\\s*\n" +
+                        "<td[^>]*>\\s*(?<TYPE>.*?)\\s*</td>\\s*\n" +
+                        "<td[^>]*>\\s*(?:.*?)</td>\\s*\n" +
+                        "<td[^>]*>\\s*<a(?:.*?)href\\s*=\\s*\"(?<SECONDLEVEL>.*?)\"[^>]*>\\s*(?<ADDRESS>.*?)\\s*</a>\\s*</td>\\s*\n" +
+                        "<td[^>]*>\\s*<span[^>]*>\\s*<span[^>]*>\\s*(?<SQUARE>.*?)\\s*</span>\\s*</span>\\s*</td>\\s*\n" +
+                        "<td[^>]*>\\s*<span[^>]*>\\s*(?<TOTALPRICE>.*?)\\s*</span>\\s*(?:.*?)</td>\\s*\n" +
+                        "<td[^>]*>\\s*(?<CONTACT>.*?)\\s*</td>\\s*";
+        spranCommConfig.mSecondLevelPattern =
+                "комментарий\\s*продавца</h[1-6]+>\\s*\n" +
+                        "<p[^>]*>\\s*(?<NOTES>.*?)\\s*</p>";
 
+        spranCommConfig.secondLevelBaseUrl = "http://spran.ru";
 
         // Request arguments
         spranCommConfig.mRequestArguments.requestArguments = new ArrayList<>();
@@ -101,6 +109,12 @@ public class AgileScraper {
         matchNames.add("SQUARE");
         matchNames.add("TOTALPRICE");
         matchNames.add("CONTACT");
+        matchNames.add(spranCommConfig.secondLevelName);
+
+        List<String> secondLevelMatchNames = new LinkedList<>();
+        secondLevelMatchNames.add("NOTES");
+
+
 
         //
         // page count
@@ -112,7 +126,10 @@ public class AgileScraper {
         // requesting first page for
         HttpSourceProvider pageCountSourceProvider = new HttpSourceProvider();
         pageCountSourceProvider.setBaseUrl(spranCommConfig.baseUrl);
-        pageCountSourceProvider.setQueryParamString(spranCommConfig.requestParams.replace(paramDistrict, "22").replace(paramPage, "1"));
+        pageCountSourceProvider.setQueryParamString(
+                spranCommConfig.requestParams
+                        .replace(paramDistrict, "22")
+                        .replace(paramPage, "1"));
 
         List<Integer> tempIntLst = new ArrayList<>();
         pageCountSourceProvider.requestSource()
@@ -135,10 +152,14 @@ public class AgileScraper {
         System.out.println("MaxPage: " + tempIntLst.get(0));
         int maxPageValue = tempIntLst.get(0);
 
+        HttpSourceProvider secondLevelProvider = new HttpSourceProvider();
 
+
+        //
+        // PARSING AND SAVING
         // for all request arguments
-        while (spranCommConfig.mRequestArguments.paramProvider.generateNext()) {
-            ArgumentedParamString currentArgString =spranCommConfig.mRequestArguments.paramProvider.getCurrent();
+        do {
+            ArgumentedParamString currentArgString = spranCommConfig.mRequestArguments.paramProvider.getCurrent();
             String currentParamString = currentArgString.mParamString;
             // read all pages
             Consumer<ParseResult> onSuccessConsumer = new OnSuccessParseConsumerCSV(mDestinationName);
@@ -151,13 +172,14 @@ public class AgileScraper {
                 }
                 spranCommSourceProvider.requestSource().subscribe(s -> {
                     parser.setMatchNames(matchNames);
-                    parser.setPattern(mSpranCommPattern);
+                    parser.setPattern(spranCommConfig.mFirstLevelPattern);
                     parser.setSource(s);
                     parser.parse()
                             .map(parseResult -> {
+                                System.out.println("Map 1");
                                 // ADDING MARKERS and ARGS
                                 for (Map<String, String> curRow : parseResult.getResult()) {
-                                    for(Map.Entry<String, String> curArg : currentArgString.mFieldsArguments.entrySet()){
+                                    for (Map.Entry<String, String> curArg : currentArgString.mFieldsArguments.entrySet()) {
                                         curRow.put(curArg.getKey(), curArg.getValue());
                                     }
 
@@ -167,9 +189,39 @@ public class AgileScraper {
                                 }
                                 return parseResult;
                             })
+
+                            .map(parseResult -> {
+                                System.out.println("Map 2");
+                                if(spranCommConfig.secondLevelName != null && !spranCommConfig.secondLevelName.isEmpty()){
+                                    ICommonParser secondLevelParser = new RegExParser();
+
+
+                                    for(Map<String, String> curRow : parseResult.getResult()){
+                                        String secondLevelURL = curRow.get(spranCommConfig.secondLevelName);
+                                        secondLevelProvider.setBaseUrl(spranCommConfig.secondLevelBaseUrl + secondLevelURL);
+                                        secondLevelProvider.requestSource()
+                                                .subscribe(secondLevelSource ->{
+                                                    secondLevelParser.setSource(secondLevelSource);
+                                                    secondLevelParser.setPattern(spranCommConfig.mSecondLevelPattern);
+                                                    secondLevelParser.setMatchNames(secondLevelMatchNames);
+                                                    secondLevelParser.parse()
+                                                            .subscribe(secondLevelParseResult -> {
+                                                                for(Map<String, String> SL_curRow : secondLevelParseResult.getResult()){
+                                                                    for(String curName : secondLevelMatchNames){
+                                                                        curRow.put(curName, SL_curRow.get(curName));
+                                                                    }
+                                                                }
+                                                            });
+                                                });
+                                    }
+                                }
+                                return parseResult;
+                            })
+
                             .subscribe(onSuccessConsumer, Throwable::printStackTrace);
                 });
             } // for firstPageNum
-        }// while generateNext
+        }
+        while (spranCommConfig.mRequestArguments.paramProvider.generateNext());// while generateNext
     } // run()
 }
