@@ -22,7 +22,7 @@ public class AgileScraper {
     private final String mDestinationName = "my_local_db";
     private final String paramPage = "{[PAGE]}";
     private final String paramDistrict = "{[DISTRICT]}";
-    private final String fieldDistrict = "DISTRICT";
+    private final String fieldDistrict = "district";
 
     class PrimitiveConfiguration {
         // reader
@@ -45,6 +45,10 @@ public class AgileScraper {
         String mSecondLevelPattern;
         String secondLevelName = "SECONDLEVEL";
         String secondLevelBaseUrl;
+
+        Map<String, String> mFirstLevelBindings;
+        Map<String, String> mSecondLevelBindings;
+
     }
 
     public void run() {
@@ -70,6 +74,19 @@ public class AgileScraper {
                 "комментарий\\s*продавца</h[1-6]+>\\s*\n" +
                         "<p[^>]*>\\s*(?<NOTES>.*?)\\s*</p>";
 
+        spranCommConfig.mFirstLevelBindings = new HashMap<>();
+        spranCommConfig.mFirstLevelBindings.put("TYPE", "type");
+        spranCommConfig.mFirstLevelBindings.put("ADDRESS", "address");
+        spranCommConfig.mFirstLevelBindings.put("SQUARE", "square");
+        spranCommConfig.mFirstLevelBindings.put("TOTALPRICE", "price");
+        spranCommConfig.mFirstLevelBindings.put("CONTACT", "contact_info");
+        spranCommConfig.mFirstLevelBindings.put(spranCommConfig.secondLevelName, spranCommConfig.secondLevelName);
+
+
+        spranCommConfig.mSecondLevelBindings = new HashMap<>();
+        spranCommConfig.mSecondLevelBindings.put("NOTES", "notes");
+
+
         spranCommConfig.secondLevelBaseUrl = "http://spran.ru";
 
         // Request arguments
@@ -92,29 +109,19 @@ public class AgileScraper {
         spranCommConfig.mRequestArguments.initProvider(spranCommConfig.requestParams);
 
         // Markers
-        spranCommConfig.markers.put("CITY", "Новосибирск");
-        spranCommConfig.markers.put("MARKET", "ком. продажа");
+        spranCommConfig.markers.put("city", "Новосибирск");
+        spranCommConfig.markers.put("market", "ком. продажа");
 
+        // source provider
         HttpSourceProvider spranCommSourceProvider = new HttpSourceProvider();
         spranCommSourceProvider.setBaseUrl(spranCommConfig.baseUrl);
         spranCommSourceProvider.setClientCharset(spranCommConfig.clientEcoding);
         spranCommSourceProvider.setHttpMethod(spranCommConfig.method);
+        // FIXME: Param string must be built for every combination!!!!!!!!!!!!!!!
         spranCommSourceProvider.setQueryParamString(spranCommConfig.requestParams.replace(paramPage, "1"));
 
         // parser
         ICommonParser parser = new RegExParser();
-        List<String> matchNames = new LinkedList<>();
-        matchNames.add("TYPE");
-        matchNames.add("ADDRESS");
-        matchNames.add("SQUARE");
-        matchNames.add("TOTALPRICE");
-        matchNames.add("CONTACT");
-        matchNames.add(spranCommConfig.secondLevelName);
-
-        List<String> secondLevelMatchNames = new LinkedList<>();
-        secondLevelMatchNames.add("NOTES");
-
-
 
         //
         // page count
@@ -126,6 +133,7 @@ public class AgileScraper {
         // requesting first page for
         HttpSourceProvider pageCountSourceProvider = new HttpSourceProvider();
         pageCountSourceProvider.setBaseUrl(spranCommConfig.baseUrl);
+        // FIXME: Param string must be built for every combination!!!!!!!!!!!!!!!
         pageCountSourceProvider.setQueryParamString(
                 spranCommConfig.requestParams
                         .replace(paramDistrict, "22")
@@ -134,7 +142,7 @@ public class AgileScraper {
         List<Integer> tempIntLst = new ArrayList<>();
         pageCountSourceProvider.requestSource()
                 .subscribe(source -> {
-                    List<String> maxPageNumName = new ArrayList<>();
+                    Set<String> maxPageNumName = new HashSet<>();
                     maxPageNumName.add(pageNumName);
                     parser.setMatchNames(maxPageNumName);
                     parser.setPattern(maxPagePattern);
@@ -171,13 +179,15 @@ public class AgileScraper {
                     e.printStackTrace();
                 }
                 spranCommSourceProvider.requestSource().subscribe(s -> {
-                    parser.setMatchNames(matchNames);
+                    parser.setMatchNames(spranCommConfig.mFirstLevelBindings.keySet());
+                    parser.setBindings(spranCommConfig.mFirstLevelBindings);
                     parser.setPattern(spranCommConfig.mFirstLevelPattern);
                     parser.setSource(s);
                     parser.parse()
                             .map(parseResult -> {
-                                System.out.println("Map 1");
+                                //
                                 // ADDING MARKERS and ARGS
+                                //
                                 for (Map<String, String> curRow : parseResult.getResult()) {
                                     for (Map.Entry<String, String> curArg : currentArgString.mFieldsArguments.entrySet()) {
                                         curRow.put(curArg.getKey(), curArg.getValue());
@@ -191,23 +201,26 @@ public class AgileScraper {
                             })
 
                             .map(parseResult -> {
-                                System.out.println("Map 2");
-                                if(spranCommConfig.secondLevelName != null && !spranCommConfig.secondLevelName.isEmpty()){
+                                //
+                                //  Second level
+                                //
+                                if (spranCommConfig.secondLevelName != null && !spranCommConfig.secondLevelName.isEmpty()) {
                                     ICommonParser secondLevelParser = new RegExParser();
 
 
-                                    for(Map<String, String> curRow : parseResult.getResult()){
+                                    for (Map<String, String> curRow : parseResult.getResult()) {
                                         String secondLevelURL = curRow.get(spranCommConfig.secondLevelName);
                                         secondLevelProvider.setBaseUrl(spranCommConfig.secondLevelBaseUrl + secondLevelURL);
                                         secondLevelProvider.requestSource()
-                                                .subscribe(secondLevelSource ->{
+                                                .subscribe(secondLevelSource -> {
                                                     secondLevelParser.setSource(secondLevelSource);
                                                     secondLevelParser.setPattern(spranCommConfig.mSecondLevelPattern);
-                                                    secondLevelParser.setMatchNames(secondLevelMatchNames);
+                                                    secondLevelParser.setMatchNames(spranCommConfig.mSecondLevelBindings.keySet());
+                                                    secondLevelParser.setBindings(spranCommConfig.mSecondLevelBindings);
                                                     secondLevelParser.parse()
                                                             .subscribe(secondLevelParseResult -> {
-                                                                for(Map<String, String> SL_curRow : secondLevelParseResult.getResult()){
-                                                                    for(String curName : secondLevelMatchNames){
+                                                                for (Map<String, String> SL_curRow : secondLevelParseResult.getResult()) {
+                                                                    for (String curName : spranCommConfig.mSecondLevelBindings.values()) {
                                                                         curRow.put(curName, SL_curRow.get(curName));
                                                                     }
                                                                 }

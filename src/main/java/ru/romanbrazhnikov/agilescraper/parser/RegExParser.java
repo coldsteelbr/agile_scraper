@@ -3,28 +3,22 @@ package ru.romanbrazhnikov.agilescraper.parser;
 import io.reactivex.Single;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class RegExParser implements ICommonParser {
 
     private String mPatternRegEx = null;
     private String mSource = null;
-    private List<String> mGroupNames;
-    private long mDelayInMillis;
+    private Set<String> mGroupNames;
+    private Map<String, String> mBindings;
 
     private Pattern mPattern;
 
     private ParseResult mResultTable = new ParseResult();
 
-
-    public RegExParser() {
-        mDelayInMillis = 3000;
-    }
 
     @Override
     public void setSource(String source) {
@@ -41,8 +35,13 @@ public class RegExParser implements ICommonParser {
     }
 
     @Override
-    public void setMatchNames(List<String> names) {
+    public void setMatchNames(Set<String> names) {
         mGroupNames = names;
+    }
+
+    @Override
+    public void setBindings(Map<String, String> bindings) {
+        mBindings = bindings;
     }
 
     private Single<ParseResult> getResult() {
@@ -55,14 +54,17 @@ public class RegExParser implements ICommonParser {
                 Map<String, String> currentResultRow = new HashMap<>();
                 for (String currentName : mGroupNames) {
                     try {
-                        currentResultRow.put(currentName, m.group(currentName));
-                    }catch (Exception e){
+                        currentResultRow.put(
+                                // if there's binding alias - use it
+                                mBindings.get(currentName) == null ? currentName : mBindings.get(currentName),
+                                m.group(currentName));
+                    } catch (Exception e) {
                         emitter.onError(
                                 new Exception(
                                         "Curname:" + currentName +
-                                        ", Source: " + mSource +
-                                        ", mPatternRegEx:" + mPatternRegEx +
-                                        ", " + e.getMessage()
+                                                ", Source: " + mSource +
+                                                ", mPatternRegEx:" + mPatternRegEx +
+                                                ", " + e.getMessage()
                                 ));
                     }
                 }

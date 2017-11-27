@@ -1,7 +1,6 @@
 package ru.romanbrazhnikov.agilescraper.resultsaver;
 
 import io.reactivex.Completable;
-import javafx.util.Builder;
 import ru.romanbrazhnikov.agilescraper.parser.ParseResult;
 
 import java.io.IOException;
@@ -38,20 +37,19 @@ public class CsvSaver implements ICommonSaver {
         final Set<String> fields = parseResult.getMatchingNames();
 
 
-
         return Completable.create(emitter -> {
             StringBuilder builder = new StringBuilder();
             String currentValue;
 
             // creating the header of .CSV file
-            for(String currentField : fields){
+            for (String currentField : fields) {
                 builder.append(currentField).append(mDelimiter);
             }
             builder.append(mEndOfLine);
             // creating rows of .CSV file
             for (Map<String, String> currentRow : parseResult.getResult()) {
                 // creating a row by appending values separated with ";"
-                for(String currentField : fields){
+                for (String currentField : fields) {
                     // getting next value
                     currentValue = currentRow.get(currentField);
                     // appending to the string builder replacing ";" with ","
