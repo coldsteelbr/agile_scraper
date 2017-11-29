@@ -1,7 +1,7 @@
 package ru.romanbrazhnikov.agilescraper.sourceprovider;
 
 import io.reactivex.Single;
-import ru.romanbrazhnikov.agilescraper.cookies.Cookie;
+import ru.romanbrazhnikov.agilescraper.sourceprovider.cookies.Cookie;
 
 
 import java.io.InputStream;

@@ -1,4 +1,4 @@
-package ru.romanbrazhnikov.agilescraper.cookies;
+package ru.romanbrazhnikov.agilescraper.sourceprovider.cookies;
 
 public class CookieRules {
     /** address to request cookies */

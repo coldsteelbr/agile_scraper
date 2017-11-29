@@ -1,4 +1,4 @@
-package ru.romanbrazhnikov.agilescraper.cookies;
+package ru.romanbrazhnikov.agilescraper.sourceprovider.cookies;
 
 import java.util.List;
 

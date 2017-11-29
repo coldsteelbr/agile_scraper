@@ -1,6 +1,8 @@
 package ru.romanbrazhnikov.agilescraper;
 
 import io.reactivex.functions.Consumer;
+import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.HardcodesConfigFactory;
+import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.PrimitiveConfiguration;
 import ru.romanbrazhnikov.agilescraper.parser.ICommonParser;
 import ru.romanbrazhnikov.agilescraper.parser.ParseResult;
 import ru.romanbrazhnikov.agilescraper.parser.RegExParser;
@@ -20,97 +22,18 @@ public class AgileScraper {
 
 
     private final String mDestinationName = "my_local_db";
-    private final String paramPage = "{[PAGE]}";
-    private final String paramDistrict = "{[DISTRICT]}";
-    private final String fieldDistrict = "district";
-
-    class PrimitiveConfiguration {
-        // reader
-        long delayInMillis = 334;
-        String baseUrl;
-        String clientEcoding = "utf8";
-        HttpMethods method = HttpMethods.GET;
-        // request params
-        String requestParams;
 
 
-        // markers
-        Map<String, String> markers = new HashMap<>();
 
-        // request args
-        RequestArguments mRequestArguments = new RequestArguments();
-
-        String mFirstLevelPattern;
-
-        String mSecondLevelPattern;
-        String secondLevelName = "SECONDLEVEL";
-        String secondLevelBaseUrl;
-
-        Map<String, String> mFirstLevelBindings;
-        Map<String, String> mSecondLevelBindings;
-
-    }
 
     public void run() {
 
         System.out.println("Agile scraper ran");
-
-        final String paramString = "areas%5B0%5D=" + paramDistrict + "&currency=1&costMode=1&cities%5B0%5D=21&page=" + paramPage;
-
+        HardcodesConfigFactory configFactory = new HardcodesConfigFactory();
         // creating primitive configuration
         //      Spran comm config
-        PrimitiveConfiguration spranCommConfig = new PrimitiveConfiguration();
-        spranCommConfig.baseUrl = "http://spran.ru/sell/comm.html";
-        spranCommConfig.requestParams = paramString;
-        spranCommConfig.mFirstLevelPattern =
-                "<tr[^>]*>\\s*\n" +
-                        "<td[^>]*>\\s*(?<TYPE>.*?)\\s*</td>\\s*\n" +
-                        "<td[^>]*>\\s*(?:.*?)</td>\\s*\n" +
-                        "<td[^>]*>\\s*<a(?:.*?)href\\s*=\\s*\"(?<SECONDLEVEL>.*?)\"[^>]*>\\s*(?<ADDRESS>.*?)\\s*</a>\\s*</td>\\s*\n" +
-                        "<td[^>]*>\\s*<span[^>]*>\\s*<span[^>]*>\\s*(?<SQUARE>.*?)\\s*</span>\\s*</span>\\s*</td>\\s*\n" +
-                        "<td[^>]*>\\s*<span[^>]*>\\s*(?<TOTALPRICE>.*?)\\s*</span>\\s*(?:.*?)</td>\\s*\n" +
-                        "<td[^>]*>\\s*(?<CONTACT>.*?)\\s*</td>\\s*";
-        spranCommConfig.mSecondLevelPattern =
-                "комментарий\\s*продавца</h[1-6]+>\\s*\n" +
-                        "<p[^>]*>\\s*(?<NOTES>.*?)\\s*</p>";
+        PrimitiveConfiguration spranCommConfig = configFactory.getSpranCommSell();
 
-        spranCommConfig.mFirstLevelBindings = new HashMap<>();
-        spranCommConfig.mFirstLevelBindings.put("TYPE", "type");
-        spranCommConfig.mFirstLevelBindings.put("ADDRESS", "address");
-        spranCommConfig.mFirstLevelBindings.put("SQUARE", "square");
-        spranCommConfig.mFirstLevelBindings.put("TOTALPRICE", "price");
-        spranCommConfig.mFirstLevelBindings.put("CONTACT", "contact_info");
-        spranCommConfig.mFirstLevelBindings.put(spranCommConfig.secondLevelName, spranCommConfig.secondLevelName);
-
-
-        spranCommConfig.mSecondLevelBindings = new HashMap<>();
-        spranCommConfig.mSecondLevelBindings.put("NOTES", "notes");
-
-
-        spranCommConfig.secondLevelBaseUrl = "http://spran.ru";
-
-        // Request arguments
-        spranCommConfig.mRequestArguments.requestArguments = new ArrayList<>();
-        Argument argumentDistrict = new Argument();
-        argumentDistrict.name = paramDistrict;
-        argumentDistrict.field = fieldDistrict;
-        argumentDistrict.mValues = new ArrayList<>();
-        argumentDistrict.mValues.add(new Values("22", "Дзержинский"));
-        argumentDistrict.mValues.add(new Values("23", "Железнодорожный"));
-        argumentDistrict.mValues.add(new Values("24", "Заельцовский"));
-        argumentDistrict.mValues.add(new Values("25", "Килининский"));
-        argumentDistrict.mValues.add(new Values("26", "Кировский"));
-        argumentDistrict.mValues.add(new Values("27", "Ленинский"));
-        argumentDistrict.mValues.add(new Values("29", "Октябрьский"));
-        argumentDistrict.mValues.add(new Values("30", "Первомайский"));
-        argumentDistrict.mValues.add(new Values("31", "Советский"));
-        argumentDistrict.mValues.add(new Values("32", "Центральный"));
-        spranCommConfig.mRequestArguments.requestArguments.add(argumentDistrict);
-        spranCommConfig.mRequestArguments.initProvider(spranCommConfig.requestParams);
-
-        // Markers
-        spranCommConfig.markers.put("city", "Новосибирск");
-        spranCommConfig.markers.put("market", "ком. продажа");
 
         // source provider
         HttpSourceProvider spranCommSourceProvider = new HttpSourceProvider();
@@ -118,7 +41,7 @@ public class AgileScraper {
         spranCommSourceProvider.setClientCharset(spranCommConfig.clientEcoding);
         spranCommSourceProvider.setHttpMethod(spranCommConfig.method);
         // FIXME: Param string must be built for every combination!!!!!!!!!!!!!!!
-        spranCommSourceProvider.setQueryParamString(spranCommConfig.requestParams.replace(paramPage, "1"));
+        spranCommSourceProvider.setQueryParamString(spranCommConfig.requestParams.replace(HardcodesConfigFactory.paramPage, "1"));
 
         // parser
         ICommonParser parser = new RegExParser();
@@ -136,8 +59,8 @@ public class AgileScraper {
         // FIXME: Param string must be built for every combination!!!!!!!!!!!!!!!
         pageCountSourceProvider.setQueryParamString(
                 spranCommConfig.requestParams
-                        .replace(paramDistrict, "22")
-                        .replace(paramPage, "1"));
+                        .replace(HardcodesConfigFactory.paramDistrict, "22")
+                        .replace(HardcodesConfigFactory.paramPage, "1"));
 
         List<Integer> tempIntLst = new ArrayList<>();
         pageCountSourceProvider.requestSource()
@@ -172,7 +95,7 @@ public class AgileScraper {
             // read all pages
             Consumer<ParseResult> onSuccessConsumer = new OnSuccessParseConsumerCSV(mDestinationName);
             for (int i = firstPageNum; i <= maxPageValue; i += pageStep) {
-                spranCommSourceProvider.setQueryParamString(currentParamString.replace(paramPage, String.valueOf(i)));
+                spranCommSourceProvider.setQueryParamString(currentParamString.replace(HardcodesConfigFactory.paramPage, String.valueOf(i)));
                 try {
                     MILLISECONDS.sleep(spranCommConfig.delayInMillis);
                 } catch (InterruptedException e) {

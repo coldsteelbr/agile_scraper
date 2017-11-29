@@ -1,4 +1,4 @@
-package ru.romanbrazhnikov.agilescraper.cookies;
+package ru.romanbrazhnikov.agilescraper.sourceprovider.cookies;
 
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
