@@ -1,16 +1,12 @@
 package ru.romanbrazhnikov.agilescraper;
 
 import io.reactivex.functions.Consumer;
-import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.HardcodesConfigFactory;
+import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.HardcodedConfigFactory;
 import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.PrimitiveConfiguration;
 import ru.romanbrazhnikov.agilescraper.parser.ICommonParser;
 import ru.romanbrazhnikov.agilescraper.parser.ParseResult;
 import ru.romanbrazhnikov.agilescraper.parser.RegExParser;
-import ru.romanbrazhnikov.agilescraper.requestarguments.Argument;
-import ru.romanbrazhnikov.agilescraper.requestarguments.RequestArguments;
-import ru.romanbrazhnikov.agilescraper.requestarguments.Values;
 import ru.romanbrazhnikov.agilescraper.resultsaver.OnSuccessParseConsumerCSV;
-import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpSourceProvider;
 import ru.romanbrazhnikov.agilescraper.sourcereader.ArgumentedParamString;
 
@@ -21,15 +17,10 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class AgileScraper {
 
 
-    private final String mDestinationName = "my_local_db";
-
-
-
-
     public void run() {
 
         System.out.println("Agile scraper ran");
-        HardcodesConfigFactory configFactory = new HardcodesConfigFactory();
+        HardcodedConfigFactory configFactory = new HardcodedConfigFactory();
         // creating primitive configuration
         //      Spran comm config
         PrimitiveConfiguration spranCommConfig = configFactory.getSpranCommSell();
@@ -41,7 +32,7 @@ public class AgileScraper {
         spranCommSourceProvider.setClientCharset(spranCommConfig.clientEcoding);
         spranCommSourceProvider.setHttpMethod(spranCommConfig.method);
         // FIXME: Param string must be built for every combination!!!!!!!!!!!!!!!
-        spranCommSourceProvider.setQueryParamString(spranCommConfig.requestParams.replace(HardcodesConfigFactory.paramPage, "1"));
+        spranCommSourceProvider.setQueryParamString(spranCommConfig.requestParams.replace(HardcodedConfigFactory.PARAM_PAGE, "1"));
 
         // parser
         ICommonParser parser = new RegExParser();
@@ -50,17 +41,15 @@ public class AgileScraper {
         // page count
         //
         final String pageNumName = "PAGENUM";
-        int firstPageNum = 1;
-        int pageStep = 1;
-        String maxPagePattern = "page\\s*=\\s*(?<" + pageNumName + ">[0-9]+?)\">\\s*[0-9]+\\s*<";
+
         // requesting first page for
         HttpSourceProvider pageCountSourceProvider = new HttpSourceProvider();
         pageCountSourceProvider.setBaseUrl(spranCommConfig.baseUrl);
         // FIXME: Param string must be built for every combination!!!!!!!!!!!!!!!
         pageCountSourceProvider.setQueryParamString(
                 spranCommConfig.requestParams
-                        .replace(HardcodesConfigFactory.paramDistrict, "22")
-                        .replace(HardcodesConfigFactory.paramPage, "1"));
+                        .replace(HardcodedConfigFactory.paramDistrict, "22")
+                        .replace(HardcodedConfigFactory.PARAM_PAGE, "1"));
 
         List<Integer> tempIntLst = new ArrayList<>();
         pageCountSourceProvider.requestSource()
@@ -68,11 +57,11 @@ public class AgileScraper {
                     Set<String> maxPageNumName = new HashSet<>();
                     maxPageNumName.add(pageNumName);
                     parser.setMatchNames(maxPageNumName);
-                    parser.setPattern(maxPagePattern);
+                    parser.setPattern(spranCommConfig.maxPagePattern);
                     parser.setSource(source);
                     parser.parse().map(parseResult -> {
                         int curMax;
-                        int totalMax = firstPageNum;
+                        int totalMax = spranCommConfig.firstPageNum;
                         for (Map<String, String> curRow : parseResult.getResult()) {
                             curMax = Integer.parseInt(curRow.get(pageNumName));
                             totalMax = curMax > totalMax ? curMax : totalMax;
@@ -93,9 +82,9 @@ public class AgileScraper {
             ArgumentedParamString currentArgString = spranCommConfig.mRequestArguments.paramProvider.getCurrent();
             String currentParamString = currentArgString.mParamString;
             // read all pages
-            Consumer<ParseResult> onSuccessConsumer = new OnSuccessParseConsumerCSV(mDestinationName);
-            for (int i = firstPageNum; i <= maxPageValue; i += pageStep) {
-                spranCommSourceProvider.setQueryParamString(currentParamString.replace(HardcodesConfigFactory.paramPage, String.valueOf(i)));
+            Consumer<ParseResult> onSuccessConsumer = new OnSuccessParseConsumerCSV(spranCommConfig.mDestinationName);
+            for (int i = spranCommConfig.firstPageNum; i <= maxPageValue; i += spranCommConfig.pageStep) {
+                spranCommSourceProvider.setQueryParamString(currentParamString.replace(HardcodedConfigFactory.PARAM_PAGE, String.valueOf(i)));
                 try {
                     MILLISECONDS.sleep(spranCommConfig.delayInMillis);
                 } catch (InterruptedException e) {

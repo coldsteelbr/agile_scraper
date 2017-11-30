@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public     class PrimitiveConfiguration {
+    public static final String PAGE_NUM_NAME = "PAGENUM";
+
     // reader
     public long delayInMillis = 334;
     public String baseUrl;
@@ -14,14 +16,18 @@ public     class PrimitiveConfiguration {
     public HttpMethods method = HttpMethods.GET;
     // request params
     public String requestParams;
+    // request args
+    public RequestArguments mRequestArguments = new RequestArguments();
 
+    // pages
+    public int firstPageNum = 1;
+    public int pageStep = 1;
+    public String maxPagePattern = "page\\s*=\\s*(?<" + PAGE_NUM_NAME + ">[0-9]+?)\">\\s*[0-9]+\\s*<";
 
     // markers
     public Map<String, String> markers = new HashMap<>();
 
-    // request args
-    public RequestArguments mRequestArguments = new RequestArguments();
-
+    public String mDestinationName;
     public String mFirstLevelPattern;
 
     public String mSecondLevelPattern;

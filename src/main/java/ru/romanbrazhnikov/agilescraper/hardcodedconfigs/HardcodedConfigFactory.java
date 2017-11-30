@@ -2,18 +2,19 @@ package ru.romanbrazhnikov.agilescraper.hardcodedconfigs;
 
 import ru.romanbrazhnikov.agilescraper.requestarguments.Argument;
 import ru.romanbrazhnikov.agilescraper.requestarguments.Values;
+import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class HardcodesConfigFactory {
-    public static final String paramPage = "{[PAGE]}";
+public class HardcodedConfigFactory {
+    public static final String PARAM_PAGE = "{[PAGE]}";
     public static final String paramDistrict = "{[DISTRICT]}";
     public static final String fieldDistrict = "district";
 
-    public static final String paramString = "areas%5B0%5D=" + paramDistrict + "&currency=1&costMode=1&cities%5B0%5D=21&page=" + paramPage;
+    public static final String paramString = "areas%5B0%5D=" + paramDistrict + "&currency=1&costMode=1&cities%5B0%5D=21&page=" + PARAM_PAGE;
 
-    public PrimitiveConfiguration getSpranCommSell(){
+    public PrimitiveConfiguration getSpranCommSell() {
         PrimitiveConfiguration configuration = new PrimitiveConfiguration();
 
         configuration.baseUrl = "http://spran.ru/sell/comm.html";
@@ -67,6 +68,39 @@ public class HardcodesConfigFactory {
         // Markers
         configuration.markers.put("city", "Новосибирск");
         configuration.markers.put("market", "ком. продажа");
+
+        return configuration;
+    }
+
+    public PrimitiveConfiguration getProstoTomskCommSell() {
+        PrimitiveConfiguration configuration = new PrimitiveConfiguration();
+        configuration.method = HttpMethods.GET;
+        configuration.baseUrl = "http://prosto.tomsk.ru";
+        configuration.requestParams = "rm=prosto_offers_list&l_page=" + PARAM_PAGE;
+        configuration.firstPageNum = 1; // default
+        configuration.pageStep = 1; // default
+        configuration.maxPagePattern = "page\\s*=\\s*[0-9]+\"><span[^>]*>(?<PAGENUM>.*?)\\s*</span>\\s*</a>";
+        // TODO: add custom COOKIES here
+        configuration.mDestinationName = "prosto_tomsk";
+        configuration.mFirstLevelPattern = "<tr\\s*id\\s*=\\s*\"offer[^>]*>\\s*\n" +
+                "<td[^>]*>\\s*(?:.*?)</td>\\s*\n" +
+                "<td[^>]*>\\s*<div[^>]*>\\s*(?<TYPE>.*?)\\s*</div>\\s*</td>\\s*\n" +
+                "<td[^>]*>\\s*<div[^>]*>\\s*(?<ADDRESS>.*?)\\s*</div>\\s*\n" +
+                "(?:\n" +
+                "   (?:.*?)\n" +
+                "   (?:<div[^>]*>\\s*(?<DISTRICT>.*?)\\s*</div>)\n" +
+                ")?\n" +
+                "\\s*</td>\\s*\n" +
+                "<td[^>]*>\\s*(?<TOTALSQUARE>.*?)\\s*</td>\\s*\n" +
+                "<td[^>]*>\\s*<div[^>]*>\\s*(?<TOTALPRICE>.*?)\\s*</div>\\s*\n" +
+                "<div[^>]*>\\s*(?:.*?)</div>\\s*</td>\\s*";
+        configuration.mFirstLevelBindings = new HashMap<>();
+        configuration.mFirstLevelBindings.put("TYPE", "type");
+        configuration.mFirstLevelBindings.put("ADDRESS", "address");
+        configuration.mFirstLevelBindings.put("DISTRICT", "district");
+        configuration.mFirstLevelBindings.put("TOTALSQUARE", "total_square");
+        configuration.mFirstLevelBindings.put("TOTALPRICE", "total_price");
+
 
         return configuration;
     }
