@@ -17,7 +17,7 @@ public     class PrimitiveConfiguration {
     // request params
     public String requestParams;
     // request args
-    public RequestArguments mRequestArguments = new RequestArguments();
+    public RequestArguments requestArguments = new RequestArguments();
 
     // pages
     public int firstPageNum = 1;
@@ -27,14 +27,14 @@ public     class PrimitiveConfiguration {
     // markers
     public Map<String, String> markers = new HashMap<>();
 
-    public String mDestinationName;
-    public String mFirstLevelPattern;
+    public String destinationName;
+    public String firstLevelPattern;
 
-    public String mSecondLevelPattern;
+    public String secondLevelPattern;
     public String secondLevelName = "SECONDLEVEL";
     public String secondLevelBaseUrl;
 
-    public Map<String, String> mFirstLevelBindings;
-    public Map<String, String> mSecondLevelBindings;
+    public Map<String, String> firstLevelBindings;
+    public Map<String, String> secondLevelBindings;
 
 }

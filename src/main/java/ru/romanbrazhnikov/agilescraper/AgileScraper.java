@@ -79,10 +79,10 @@ public class AgileScraper {
         // PARSING AND SAVING
         // for all request arguments
         do {
-            ArgumentedParamString currentArgString = spranCommConfig.mRequestArguments.paramProvider.getCurrent();
+            ArgumentedParamString currentArgString = spranCommConfig.requestArguments.paramProvider.getCurrent();
             String currentParamString = currentArgString.mParamString;
             // read all pages
-            Consumer<ParseResult> onSuccessConsumer = new OnSuccessParseConsumerCSV(spranCommConfig.mDestinationName);
+            Consumer<ParseResult> onSuccessConsumer = new OnSuccessParseConsumerCSV(spranCommConfig.destinationName);
             for (int i = spranCommConfig.firstPageNum; i <= maxPageValue; i += spranCommConfig.pageStep) {
                 spranCommSourceProvider.setQueryParamString(currentParamString.replace(HardcodedConfigFactory.PARAM_PAGE, String.valueOf(i)));
                 try {
@@ -91,9 +91,9 @@ public class AgileScraper {
                     e.printStackTrace();
                 }
                 spranCommSourceProvider.requestSource().subscribe(s -> {
-                    parser.setMatchNames(spranCommConfig.mFirstLevelBindings.keySet());
-                    parser.setBindings(spranCommConfig.mFirstLevelBindings);
-                    parser.setPattern(spranCommConfig.mFirstLevelPattern);
+                    parser.setMatchNames(spranCommConfig.firstLevelBindings.keySet());
+                    parser.setBindings(spranCommConfig.firstLevelBindings);
+                    parser.setPattern(spranCommConfig.firstLevelPattern);
                     parser.setSource(s);
                     parser.parse()
                             .map(parseResult -> {
@@ -126,13 +126,13 @@ public class AgileScraper {
                                         secondLevelProvider.requestSource()
                                                 .subscribe(secondLevelSource -> {
                                                     secondLevelParser.setSource(secondLevelSource);
-                                                    secondLevelParser.setPattern(spranCommConfig.mSecondLevelPattern);
-                                                    secondLevelParser.setMatchNames(spranCommConfig.mSecondLevelBindings.keySet());
-                                                    secondLevelParser.setBindings(spranCommConfig.mSecondLevelBindings);
+                                                    secondLevelParser.setPattern(spranCommConfig.secondLevelPattern);
+                                                    secondLevelParser.setMatchNames(spranCommConfig.secondLevelBindings.keySet());
+                                                    secondLevelParser.setBindings(spranCommConfig.secondLevelBindings);
                                                     secondLevelParser.parse()
                                                             .subscribe(secondLevelParseResult -> {
                                                                 for (Map<String, String> SL_curRow : secondLevelParseResult.getResult()) {
-                                                                    for (String curName : spranCommConfig.mSecondLevelBindings.values()) {
+                                                                    for (String curName : spranCommConfig.secondLevelBindings.values()) {
                                                                         curRow.put(curName, SL_curRow.get(curName));
                                                                     }
                                                                 }
@@ -147,6 +147,6 @@ public class AgileScraper {
                 });
             } // for firstPageNum
         }
-        while (spranCommConfig.mRequestArguments.paramProvider.generateNext());// while generateNext
+        while (spranCommConfig.requestArguments.paramProvider.generateNext());// while generateNext
     } // run()
 }

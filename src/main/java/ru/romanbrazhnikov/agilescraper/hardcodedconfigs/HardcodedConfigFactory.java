@@ -17,9 +17,10 @@ public class HardcodedConfigFactory {
     public PrimitiveConfiguration getSpranCommSell() {
         PrimitiveConfiguration configuration = new PrimitiveConfiguration();
 
+        configuration.destinationName = "db_spran";
         configuration.baseUrl = "http://spran.ru/sell/comm.html";
         configuration.requestParams = paramString;
-        configuration.mFirstLevelPattern =
+        configuration.firstLevelPattern =
                 "<tr[^>]*>\\s*\n" +
                         "<td[^>]*>\\s*(?<TYPE>.*?)\\s*</td>\\s*\n" +
                         "<td[^>]*>\\s*(?:.*?)</td>\\s*\n" +
@@ -27,27 +28,27 @@ public class HardcodedConfigFactory {
                         "<td[^>]*>\\s*<span[^>]*>\\s*<span[^>]*>\\s*(?<SQUARE>.*?)\\s*</span>\\s*</span>\\s*</td>\\s*\n" +
                         "<td[^>]*>\\s*<span[^>]*>\\s*(?<TOTALPRICE>.*?)\\s*</span>\\s*(?:.*?)</td>\\s*\n" +
                         "<td[^>]*>\\s*(?<CONTACT>.*?)\\s*</td>\\s*";
-        configuration.mSecondLevelPattern =
+        configuration.secondLevelPattern =
                 "комментарий\\s*продавца</h[1-6]+>\\s*\n" +
                         "<p[^>]*>\\s*(?<NOTES>.*?)\\s*</p>";
 
-        configuration.mFirstLevelBindings = new HashMap<>();
-        configuration.mFirstLevelBindings.put("TYPE", "type");
-        configuration.mFirstLevelBindings.put("ADDRESS", "address");
-        configuration.mFirstLevelBindings.put("SQUARE", "square");
-        configuration.mFirstLevelBindings.put("TOTALPRICE", "price");
-        configuration.mFirstLevelBindings.put("CONTACT", "contact_info");
-        configuration.mFirstLevelBindings.put(configuration.secondLevelName, configuration.secondLevelName);
+        configuration.firstLevelBindings = new HashMap<>();
+        configuration.firstLevelBindings.put("TYPE", "type");
+        configuration.firstLevelBindings.put("ADDRESS", "address");
+        configuration.firstLevelBindings.put("SQUARE", "square");
+        configuration.firstLevelBindings.put("TOTALPRICE", "price");
+        configuration.firstLevelBindings.put("CONTACT", "contact_info");
+        configuration.firstLevelBindings.put(configuration.secondLevelName, configuration.secondLevelName);
 
 
-        configuration.mSecondLevelBindings = new HashMap<>();
-        configuration.mSecondLevelBindings.put("NOTES", "notes");
+        configuration.secondLevelBindings = new HashMap<>();
+        configuration.secondLevelBindings.put("NOTES", "notes");
 
 
         configuration.secondLevelBaseUrl = "http://spran.ru";
 
         // Request arguments
-        configuration.mRequestArguments.requestArguments = new ArrayList<>();
+        configuration.requestArguments.requestArguments = new ArrayList<>();
         Argument argumentDistrict = new Argument();
         argumentDistrict.name = paramDistrict;
         argumentDistrict.field = fieldDistrict;
@@ -62,8 +63,8 @@ public class HardcodedConfigFactory {
         argumentDistrict.mValues.add(new Values("30", "Первомайский"));
         argumentDistrict.mValues.add(new Values("31", "Советский"));
         argumentDistrict.mValues.add(new Values("32", "Центральный"));
-        configuration.mRequestArguments.requestArguments.add(argumentDistrict);
-        configuration.mRequestArguments.initProvider(configuration.requestParams);
+        configuration.requestArguments.requestArguments.add(argumentDistrict);
+        configuration.requestArguments.initProvider(configuration.requestParams);
 
         // Markers
         configuration.markers.put("city", "Новосибирск");
@@ -81,8 +82,8 @@ public class HardcodedConfigFactory {
         configuration.pageStep = 1; // default
         configuration.maxPagePattern = "page\\s*=\\s*[0-9]+\"><span[^>]*>(?<PAGENUM>.*?)\\s*</span>\\s*</a>";
         // TODO: add custom COOKIES here
-        configuration.mDestinationName = "prosto_tomsk";
-        configuration.mFirstLevelPattern = "<tr\\s*id\\s*=\\s*\"offer[^>]*>\\s*\n" +
+        configuration.destinationName = "prosto_tomsk";
+        configuration.firstLevelPattern = "<tr\\s*id\\s*=\\s*\"offer[^>]*>\\s*\n" +
                 "<td[^>]*>\\s*(?:.*?)</td>\\s*\n" +
                 "<td[^>]*>\\s*<div[^>]*>\\s*(?<TYPE>.*?)\\s*</div>\\s*</td>\\s*\n" +
                 "<td[^>]*>\\s*<div[^>]*>\\s*(?<ADDRESS>.*?)\\s*</div>\\s*\n" +
@@ -94,12 +95,12 @@ public class HardcodedConfigFactory {
                 "<td[^>]*>\\s*(?<TOTALSQUARE>.*?)\\s*</td>\\s*\n" +
                 "<td[^>]*>\\s*<div[^>]*>\\s*(?<TOTALPRICE>.*?)\\s*</div>\\s*\n" +
                 "<div[^>]*>\\s*(?:.*?)</div>\\s*</td>\\s*";
-        configuration.mFirstLevelBindings = new HashMap<>();
-        configuration.mFirstLevelBindings.put("TYPE", "type");
-        configuration.mFirstLevelBindings.put("ADDRESS", "address");
-        configuration.mFirstLevelBindings.put("DISTRICT", "district");
-        configuration.mFirstLevelBindings.put("TOTALSQUARE", "total_square");
-        configuration.mFirstLevelBindings.put("TOTALPRICE", "total_price");
+        configuration.firstLevelBindings = new HashMap<>();
+        configuration.firstLevelBindings.put("TYPE", "type");
+        configuration.firstLevelBindings.put("ADDRESS", "address");
+        configuration.firstLevelBindings.put("DISTRICT", "district");
+        configuration.firstLevelBindings.put("TOTALSQUARE", "total_square");
+        configuration.firstLevelBindings.put("TOTALPRICE", "total_price");
 
 
         return configuration;
