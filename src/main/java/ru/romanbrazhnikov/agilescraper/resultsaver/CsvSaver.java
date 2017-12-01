@@ -54,7 +54,12 @@ public class CsvSaver implements ICommonSaver {
                     currentValue = currentRow.get(currentField);
                     // appending to the string builder replacing ";" with ","
                     builder
-                            .append(currentValue != null ? currentValue.replace(mDelimiter, mDelimiterReplacement) : "")
+                            .append(currentValue != null ?
+                                    currentValue
+                                            .replace(mDelimiter, mDelimiterReplacement)
+                                            .replaceAll("\\s+", " ")
+
+                                    : "")
                             .append(mDelimiter);
                 }
                 builder.append(mEndOfLine);

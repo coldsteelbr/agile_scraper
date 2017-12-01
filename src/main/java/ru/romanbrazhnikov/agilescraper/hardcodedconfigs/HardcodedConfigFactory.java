@@ -3,6 +3,8 @@ package ru.romanbrazhnikov.agilescraper.hardcodedconfigs;
 import ru.romanbrazhnikov.agilescraper.requestarguments.Argument;
 import ru.romanbrazhnikov.agilescraper.requestarguments.Values;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
+import ru.romanbrazhnikov.agilescraper.sourceprovider.cookies.Cookie;
+import ru.romanbrazhnikov.agilescraper.sourceprovider.cookies.Cookies;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,17 +40,20 @@ public class HardcodedConfigFactory {
         configuration.firstLevelBindings.put("SQUARE", "square");
         configuration.firstLevelBindings.put("TOTALPRICE", "price");
         configuration.firstLevelBindings.put("CONTACT", "contact_info");
+
+
+        //
+        //  Second Level
+        //
+        configuration.secondLevelName = PrimitiveConfiguration.SECOND_LEVEL_NAME;
         configuration.firstLevelBindings.put(configuration.secondLevelName, configuration.secondLevelName);
-
-
         configuration.secondLevelBindings = new HashMap<>();
         configuration.secondLevelBindings.put("NOTES", "notes");
-
 
         configuration.secondLevelBaseUrl = "http://spran.ru";
 
         // Request arguments
-        configuration.requestArguments.requestArguments = new ArrayList<>();
+        configuration.requestArguments.mArgumentList = new ArrayList<>();
         Argument argumentDistrict = new Argument();
         argumentDistrict.name = paramDistrict;
         argumentDistrict.field = fieldDistrict;
@@ -63,7 +68,7 @@ public class HardcodedConfigFactory {
         argumentDistrict.mValues.add(new Values("30", "Первомайский"));
         argumentDistrict.mValues.add(new Values("31", "Советский"));
         argumentDistrict.mValues.add(new Values("32", "Центральный"));
-        configuration.requestArguments.requestArguments.add(argumentDistrict);
+        configuration.requestArguments.mArgumentList.add(argumentDistrict);
         configuration.requestArguments.initProvider(configuration.requestParams);
 
         // Markers
@@ -78,10 +83,16 @@ public class HardcodedConfigFactory {
         configuration.method = HttpMethods.GET;
         configuration.baseUrl = "http://prosto.tomsk.ru";
         configuration.requestParams = "rm=prosto_offers_list&l_page=" + PARAM_PAGE;
+        configuration.requestArguments.initProvider(configuration.requestParams);
         configuration.firstPageNum = 1; // default
         configuration.pageStep = 1; // default
         configuration.maxPagePattern = "page\\s*=\\s*[0-9]+\"><span[^>]*>(?<PAGENUM>.*?)\\s*</span>\\s*</a>";
-        // TODO: add custom COOKIES here
+
+        configuration.cookies = new Cookies();
+        configuration.cookies.mCookieList = new ArrayList<>();
+        configuration.cookies.mCookieList.add(
+                new Cookie("PHPSESSID", "v555g65b8tf86bpngglsnu7ja0", "prosto.tomsk.ru"));
+
         configuration.destinationName = "prosto_tomsk";
         configuration.firstLevelPattern = "<tr\\s*id\\s*=\\s*\"offer[^>]*>\\s*\n" +
                 "<td[^>]*>\\s*(?:.*?)</td>\\s*\n" +

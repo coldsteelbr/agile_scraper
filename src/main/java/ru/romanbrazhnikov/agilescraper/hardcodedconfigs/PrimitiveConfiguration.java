@@ -2,13 +2,14 @@ package ru.romanbrazhnikov.agilescraper.hardcodedconfigs;
 
 import ru.romanbrazhnikov.agilescraper.requestarguments.RequestArguments;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
+import ru.romanbrazhnikov.agilescraper.sourceprovider.cookies.Cookies;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public     class PrimitiveConfiguration {
+public class PrimitiveConfiguration {
     public static final String PAGE_NUM_NAME = "PAGENUM";
-
+    public static final String SECOND_LEVEL_NAME = "SECONDLEVEL";
     // reader
     public long delayInMillis = 334;
     public String baseUrl;
@@ -27,13 +28,21 @@ public     class PrimitiveConfiguration {
     // markers
     public Map<String, String> markers = new HashMap<>();
 
-    public String destinationName;
-    public String firstLevelPattern;
+    // cookies
+    public Cookies cookies;
 
+    // destination
+    public String destinationName;
+
+    // level patterns
+    public String firstLevelPattern;
     public String secondLevelPattern;
-    public String secondLevelName = "SECONDLEVEL";
+
+    // second level specifics
+    public String secondLevelName;
     public String secondLevelBaseUrl;
 
+    // level bindings (aliases)
     public Map<String, String> firstLevelBindings;
     public Map<String, String> secondLevelBindings;
 

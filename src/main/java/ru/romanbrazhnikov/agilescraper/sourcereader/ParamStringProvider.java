@@ -15,13 +15,17 @@ public class ParamStringProvider {
     public ParamStringProvider(String paramString, List<Argument> arguments) {
         mParamString = paramString;
         mArgumentList = arguments;
-        positions = new Integer[mArgumentList.size()];
-        for (int i = 0; i < positions.length; i++) {
-            positions[i] = 0;
+        if (arguments != null) {
+            positions = new Integer[mArgumentList.size()];
+            for (int i = 0; i < positions.length; i++) {
+                positions[i] = 0;
+            }
         }
     }
 
     public boolean generateNext() {
+        if (mArgumentList == null)
+            return false;
         return rotate(0);
     }
 
@@ -30,16 +34,17 @@ public class ParamStringProvider {
         String paramToReturn = mParamString;
         Map<String, String> fieldsArguments = new HashMap<>();
 
-        String curArgument;
-        String curValue;
-        for (int i = 0; i < mArgumentList.size(); i++) {
-            curArgument = mArgumentList.get(i).name;
-            curValue = mArgumentList.get(i).mValues.get(positions[i]).argumentValue;
+        if (mArgumentList != null) {
+            String curArgument;
+            String curValue;
+            for (int i = 0; i < mArgumentList.size(); i++) {
+                curArgument = mArgumentList.get(i).name;
+                curValue = mArgumentList.get(i).mValues.get(positions[i]).argumentValue;
 
-            paramToReturn = paramToReturn.replace(curArgument, curValue);
-            fieldsArguments.put(mArgumentList.get(i).field, mArgumentList.get(i).mValues.get(positions[i]).fieldValue);
+                paramToReturn = paramToReturn.replace(curArgument, curValue);
+                fieldsArguments.put(mArgumentList.get(i).field, mArgumentList.get(i).mValues.get(positions[i]).fieldValue);
+            }
         }
-
 
         return new ArgumentedParamString(paramToReturn, fieldsArguments);
     }

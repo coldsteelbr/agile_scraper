@@ -20,57 +20,38 @@ public class AgileScraper {
     public void run() {
 
         System.out.println("Agile scraper ran");
-        HardcodedConfigFactory configFactory = new HardcodedConfigFactory();
+
         // creating primitive configuration
-        //      Spran comm config
-        PrimitiveConfiguration spranCommConfig = configFactory.getSpranCommSell();
+        // todo: inverse dependency: get as an argument
+        HardcodedConfigFactory configFactory = new HardcodedConfigFactory();
+        PrimitiveConfiguration scraperConfig = configFactory.getSpranCommSell();
+        //PrimitiveConfiguration scraperConfig = configFactory.getProstoTomskCommSell();
 
-
+        //
         // source provider
-        HttpSourceProvider spranCommSourceProvider = new HttpSourceProvider();
-        spranCommSourceProvider.setBaseUrl(spranCommConfig.baseUrl);
-        spranCommSourceProvider.setClientCharset(spranCommConfig.clientEcoding);
-        spranCommSourceProvider.setHttpMethod(spranCommConfig.method);
-        // FIXME: Param string must be built for every combination!!!!!!!!!!!!!!!
-        spranCommSourceProvider.setQueryParamString(spranCommConfig.requestParams.replace(HardcodedConfigFactory.PARAM_PAGE, "1"));
+        //
+        HttpSourceProvider mySourceProvider = new HttpSourceProvider();
+        mySourceProvider.setBaseUrl(scraperConfig.baseUrl);
+        mySourceProvider.setClientCharset(scraperConfig.clientEcoding);
+        mySourceProvider.setHttpMethod(scraperConfig.method);
+        // ... cookies
+        if (scraperConfig.cookies != null) {
+            // custom
+            if (scraperConfig.cookies.mCookieList != null) {
+                mySourceProvider.setCustomCookies(scraperConfig.cookies.mCookieList);
+            }
 
+            // auto
+            if (scraperConfig.cookies.mCookieRules != null) {
+                // request necessary page and get cookie headers from response
+            }
+        }
+
+        //
         // parser
+        //
         ICommonParser parser = new RegExParser();
 
-        //
-        // page count
-        //
-        final String pageNumName = "PAGENUM";
-
-        // requesting first page for
-        HttpSourceProvider pageCountSourceProvider = new HttpSourceProvider();
-        pageCountSourceProvider.setBaseUrl(spranCommConfig.baseUrl);
-        // FIXME: Param string must be built for every combination!!!!!!!!!!!!!!!
-        pageCountSourceProvider.setQueryParamString(
-                spranCommConfig.requestParams
-                        .replace(HardcodedConfigFactory.paramDistrict, "22")
-                        .replace(HardcodedConfigFactory.PARAM_PAGE, "1"));
-
-        List<Integer> tempIntLst = new ArrayList<>();
-        pageCountSourceProvider.requestSource()
-                .subscribe(source -> {
-                    Set<String> maxPageNumName = new HashSet<>();
-                    maxPageNumName.add(pageNumName);
-                    parser.setMatchNames(maxPageNumName);
-                    parser.setPattern(spranCommConfig.maxPagePattern);
-                    parser.setSource(source);
-                    parser.parse().map(parseResult -> {
-                        int curMax;
-                        int totalMax = spranCommConfig.firstPageNum;
-                        for (Map<String, String> curRow : parseResult.getResult()) {
-                            curMax = Integer.parseInt(curRow.get(pageNumName));
-                            totalMax = curMax > totalMax ? curMax : totalMax;
-                        }
-                        return totalMax;
-                    }).subscribe((Consumer<Integer>) tempIntLst::add);
-                });
-        System.out.println("MaxPage: " + tempIntLst.get(0));
-        int maxPageValue = tempIntLst.get(0);
 
         HttpSourceProvider secondLevelProvider = new HttpSourceProvider();
 
@@ -79,21 +60,60 @@ public class AgileScraper {
         // PARSING AND SAVING
         // for all request arguments
         do {
-            ArgumentedParamString currentArgString = spranCommConfig.requestArguments.paramProvider.getCurrent();
+            ArgumentedParamString currentArgString = scraperConfig.requestArguments.paramProvider.getCurrent();
             String currentParamString = currentArgString.mParamString;
+
+            //
+            // page count
+            //
+            final String pageNumName = "PAGENUM";
+
+            // requesting first page for
+            HttpSourceProvider pageCountSourceProvider = new HttpSourceProvider();
+            pageCountSourceProvider.setBaseUrl(scraperConfig.baseUrl);
+            // FIXME: Param string must be built for every combination!!!!!!!!!!!!!!!
+            pageCountSourceProvider.setQueryParamString(
+                    currentParamString
+                            .replace(HardcodedConfigFactory.PARAM_PAGE, String.valueOf(scraperConfig.firstPageNum)));
+            if (scraperConfig.cookies != null) {
+                if (scraperConfig.cookies.mCookieList != null) {
+                    pageCountSourceProvider.setCustomCookies(scraperConfig.cookies.mCookieList);
+                }
+            }
+            List<Integer> tempIntLst = new ArrayList<>();
+            pageCountSourceProvider.requestSource()
+                    .subscribe(source -> {
+                        Set<String> maxPageNumName = new HashSet<>();
+                        maxPageNumName.add(pageNumName);
+                        parser.setMatchNames(maxPageNumName);
+                        parser.setPattern(scraperConfig.maxPagePattern);
+                        parser.setSource(source);
+                        parser.parse().map(parseResult -> {
+                            int curMax;
+                            int totalMax = scraperConfig.firstPageNum;
+                            for (Map<String, String> curRow : parseResult.getResult()) {
+                                curMax = Integer.parseInt(curRow.get(pageNumName));
+                                totalMax = curMax > totalMax ? curMax : totalMax;
+                            }
+                            return totalMax;
+                        }).subscribe((Consumer<Integer>) tempIntLst::add);
+                    });
+            System.out.println("MaxPage: " + tempIntLst.get(0));
+            int maxPageValue = tempIntLst.get(0);
+
             // read all pages
-            Consumer<ParseResult> onSuccessConsumer = new OnSuccessParseConsumerCSV(spranCommConfig.destinationName);
-            for (int i = spranCommConfig.firstPageNum; i <= maxPageValue; i += spranCommConfig.pageStep) {
-                spranCommSourceProvider.setQueryParamString(currentParamString.replace(HardcodedConfigFactory.PARAM_PAGE, String.valueOf(i)));
+            Consumer<ParseResult> onSuccessConsumer = new OnSuccessParseConsumerCSV(scraperConfig.destinationName);
+            for (int i = scraperConfig.firstPageNum; i <= maxPageValue; i += scraperConfig.pageStep) {
+                mySourceProvider.setQueryParamString(currentParamString.replace(HardcodedConfigFactory.PARAM_PAGE, String.valueOf(i)));
                 try {
-                    MILLISECONDS.sleep(spranCommConfig.delayInMillis);
+                    MILLISECONDS.sleep(scraperConfig.delayInMillis);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                spranCommSourceProvider.requestSource().subscribe(s -> {
-                    parser.setMatchNames(spranCommConfig.firstLevelBindings.keySet());
-                    parser.setBindings(spranCommConfig.firstLevelBindings);
-                    parser.setPattern(spranCommConfig.firstLevelPattern);
+                mySourceProvider.requestSource().subscribe(s -> {
+                    parser.setMatchNames(scraperConfig.firstLevelBindings.keySet());
+                    parser.setBindings(scraperConfig.firstLevelBindings);
+                    parser.setPattern(scraperConfig.firstLevelPattern);
                     parser.setSource(s);
                     parser.parse()
                             .map(parseResult -> {
@@ -101,12 +121,15 @@ public class AgileScraper {
                                 // ADDING MARKERS and ARGS
                                 //
                                 for (Map<String, String> curRow : parseResult.getResult()) {
-                                    for (Map.Entry<String, String> curArg : currentArgString.mFieldsArguments.entrySet()) {
-                                        curRow.put(curArg.getKey(), curArg.getValue());
+                                    if (currentArgString.mFieldsArguments != null) {
+                                        for (Map.Entry<String, String> curArg : currentArgString.mFieldsArguments.entrySet()) {
+                                            curRow.put(curArg.getKey(), curArg.getValue());
+                                        }
                                     }
-
-                                    for (Map.Entry<String, String> curMarker : spranCommConfig.markers.entrySet()) {
-                                        curRow.put(curMarker.getKey(), curMarker.getValue());
+                                    if (scraperConfig.markers != null) {
+                                        for (Map.Entry<String, String> curMarker : scraperConfig.markers.entrySet()) {
+                                            curRow.put(curMarker.getKey(), curMarker.getValue());
+                                        }
                                     }
                                 }
                                 return parseResult;
@@ -116,23 +139,23 @@ public class AgileScraper {
                                 //
                                 //  Second level
                                 //
-                                if (spranCommConfig.secondLevelName != null && !spranCommConfig.secondLevelName.isEmpty()) {
+                                if (scraperConfig.secondLevelName != null && !scraperConfig.secondLevelName.isEmpty()) {
                                     ICommonParser secondLevelParser = new RegExParser();
 
 
                                     for (Map<String, String> curRow : parseResult.getResult()) {
-                                        String secondLevelURL = curRow.get(spranCommConfig.secondLevelName);
-                                        secondLevelProvider.setBaseUrl(spranCommConfig.secondLevelBaseUrl + secondLevelURL);
+                                        String secondLevelURL = curRow.get(scraperConfig.secondLevelName);
+                                        secondLevelProvider.setBaseUrl(scraperConfig.secondLevelBaseUrl + secondLevelURL);
                                         secondLevelProvider.requestSource()
                                                 .subscribe(secondLevelSource -> {
                                                     secondLevelParser.setSource(secondLevelSource);
-                                                    secondLevelParser.setPattern(spranCommConfig.secondLevelPattern);
-                                                    secondLevelParser.setMatchNames(spranCommConfig.secondLevelBindings.keySet());
-                                                    secondLevelParser.setBindings(spranCommConfig.secondLevelBindings);
+                                                    secondLevelParser.setPattern(scraperConfig.secondLevelPattern);
+                                                    secondLevelParser.setMatchNames(scraperConfig.secondLevelBindings.keySet());
+                                                    secondLevelParser.setBindings(scraperConfig.secondLevelBindings);
                                                     secondLevelParser.parse()
                                                             .subscribe(secondLevelParseResult -> {
                                                                 for (Map<String, String> SL_curRow : secondLevelParseResult.getResult()) {
-                                                                    for (String curName : spranCommConfig.secondLevelBindings.values()) {
+                                                                    for (String curName : scraperConfig.secondLevelBindings.values()) {
                                                                         curRow.put(curName, SL_curRow.get(curName));
                                                                     }
                                                                 }
@@ -147,6 +170,6 @@ public class AgileScraper {
                 });
             } // for firstPageNum
         }
-        while (spranCommConfig.requestArguments.paramProvider.generateNext());// while generateNext
+        while (scraperConfig.requestArguments.paramProvider.generateNext());// while generateNext
     } // run()
 }

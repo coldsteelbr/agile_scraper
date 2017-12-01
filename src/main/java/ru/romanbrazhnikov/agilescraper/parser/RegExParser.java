@@ -31,7 +31,8 @@ public class RegExParser implements ICommonParser {
         mPattern = Pattern.compile(mPatternRegEx,
                 Pattern.CASE_INSENSITIVE | // A=a, B=b...
                         Pattern.UNICODE_CASE | // UNICODE mode on
-                        Pattern.COMMENTS); // Comments and whitespaces permitted
+                        Pattern.COMMENTS |
+                        Pattern.DOTALL); // Comments and whitespaces permitted
     }
 
     @Override
@@ -50,21 +51,29 @@ public class RegExParser implements ICommonParser {
             Matcher m = mPattern.matcher(mSource);
             mResultTable.clear();
 
+            String currentKeyToPut;
             while (m.find()) {
                 Map<String, String> currentResultRow = new HashMap<>();
                 for (String currentName : mGroupNames) {
                     try {
+                        // checking for bindings (aliases)
+                        if (mBindings != null) {
+                            currentKeyToPut = mBindings.get(currentName) == null ? currentName : mBindings.get(currentName);
+                        } else {
+                            currentKeyToPut = currentName;
+                        }
+
                         currentResultRow.put(
-                                // if there's binding alias - use it
-                                mBindings.get(currentName) == null ? currentName : mBindings.get(currentName),
+                                currentKeyToPut,
                                 m.group(currentName));
                     } catch (Exception e) {
                         emitter.onError(
                                 new Exception(
-                                        "Curname:" + currentName +
+                                        "[RegExParser] Curname:" + currentName +
                                                 ", Source: " + mSource +
                                                 ", mPatternRegEx:" + mPatternRegEx +
-                                                ", " + e.getMessage()
+                                                ", Ex Class: " + e.getClass() +
+                                                ", Err Message: " + e.getMessage()
                                 ));
                     }
                 }
