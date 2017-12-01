@@ -17,32 +17,27 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class AgileScraper {
 
 
-    public void run() {
+    public void run(PrimitiveConfiguration configuration) {
 
         System.out.println("Agile scraper ran");
 
-        // creating primitive configuration
-        // todo: inverse dependency: get as an argument
-        HardcodedConfigFactory configFactory = new HardcodedConfigFactory();
-        PrimitiveConfiguration scraperConfig = configFactory.getSpranCommSell();
-        //PrimitiveConfiguration scraperConfig = configFactory.getProstoTomskCommSell();
 
         //
         // source provider
         //
         HttpSourceProvider mySourceProvider = new HttpSourceProvider();
-        mySourceProvider.setBaseUrl(scraperConfig.baseUrl);
-        mySourceProvider.setClientCharset(scraperConfig.clientEcoding);
-        mySourceProvider.setHttpMethod(scraperConfig.method);
+        mySourceProvider.setBaseUrl(configuration.baseUrl);
+        mySourceProvider.setClientCharset(configuration.clientEcoding);
+        mySourceProvider.setHttpMethod(configuration.method);
         // ... cookies
-        if (scraperConfig.cookies != null) {
+        if (configuration.cookies != null) {
             // custom
-            if (scraperConfig.cookies.mCookieList != null) {
-                mySourceProvider.setCustomCookies(scraperConfig.cookies.mCookieList);
+            if (configuration.cookies.mCookieList != null) {
+                mySourceProvider.setCustomCookies(configuration.cookies.mCookieList);
             }
 
             // auto
-            if (scraperConfig.cookies.mCookieRules != null) {
+            if (configuration.cookies.mCookieRules != null) {
                 // request necessary page and get cookie headers from response
             }
         }
@@ -60,7 +55,7 @@ public class AgileScraper {
         // PARSING AND SAVING
         // for all request arguments
         do {
-            ArgumentedParamString currentArgString = scraperConfig.requestArguments.paramProvider.getCurrent();
+            ArgumentedParamString currentArgString = configuration.requestArguments.paramProvider.getCurrent();
             String currentParamString = currentArgString.mParamString;
 
             //
@@ -70,14 +65,14 @@ public class AgileScraper {
 
             // requesting first page for
             HttpSourceProvider pageCountSourceProvider = new HttpSourceProvider();
-            pageCountSourceProvider.setBaseUrl(scraperConfig.baseUrl);
+            pageCountSourceProvider.setBaseUrl(configuration.baseUrl);
             // FIXME: Param string must be built for every combination!!!!!!!!!!!!!!!
             pageCountSourceProvider.setQueryParamString(
                     currentParamString
-                            .replace(HardcodedConfigFactory.PARAM_PAGE, String.valueOf(scraperConfig.firstPageNum)));
-            if (scraperConfig.cookies != null) {
-                if (scraperConfig.cookies.mCookieList != null) {
-                    pageCountSourceProvider.setCustomCookies(scraperConfig.cookies.mCookieList);
+                            .replace(HardcodedConfigFactory.PARAM_PAGE, String.valueOf(configuration.firstPageNum)));
+            if (configuration.cookies != null) {
+                if (configuration.cookies.mCookieList != null) {
+                    pageCountSourceProvider.setCustomCookies(configuration.cookies.mCookieList);
                 }
             }
             List<Integer> tempIntLst = new ArrayList<>();
@@ -86,11 +81,11 @@ public class AgileScraper {
                         Set<String> maxPageNumName = new HashSet<>();
                         maxPageNumName.add(pageNumName);
                         parser.setMatchNames(maxPageNumName);
-                        parser.setPattern(scraperConfig.maxPagePattern);
+                        parser.setPattern(configuration.maxPagePattern);
                         parser.setSource(source);
                         parser.parse().map(parseResult -> {
                             int curMax;
-                            int totalMax = scraperConfig.firstPageNum;
+                            int totalMax = configuration.firstPageNum;
                             for (Map<String, String> curRow : parseResult.getResult()) {
                                 curMax = Integer.parseInt(curRow.get(pageNumName));
                                 totalMax = curMax > totalMax ? curMax : totalMax;
@@ -102,18 +97,18 @@ public class AgileScraper {
             int maxPageValue = tempIntLst.get(0);
 
             // read all pages
-            Consumer<ParseResult> onSuccessConsumer = new OnSuccessParseConsumerCSV(scraperConfig.destinationName);
-            for (int i = scraperConfig.firstPageNum; i <= maxPageValue; i += scraperConfig.pageStep) {
+            Consumer<ParseResult> onSuccessConsumer = new OnSuccessParseConsumerCSV(configuration.destinationName);
+            for (int i = configuration.firstPageNum; i <= maxPageValue; i += configuration.pageStep) {
                 mySourceProvider.setQueryParamString(currentParamString.replace(HardcodedConfigFactory.PARAM_PAGE, String.valueOf(i)));
                 try {
-                    MILLISECONDS.sleep(scraperConfig.delayInMillis);
+                    MILLISECONDS.sleep(configuration.delayInMillis);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 mySourceProvider.requestSource().subscribe(s -> {
-                    parser.setMatchNames(scraperConfig.firstLevelBindings.keySet());
-                    parser.setBindings(scraperConfig.firstLevelBindings);
-                    parser.setPattern(scraperConfig.firstLevelPattern);
+                    parser.setMatchNames(configuration.firstLevelBindings.keySet());
+                    parser.setBindings(configuration.firstLevelBindings);
+                    parser.setPattern(configuration.firstLevelPattern);
                     parser.setSource(s);
                     parser.parse()
                             .map(parseResult -> {
@@ -126,8 +121,8 @@ public class AgileScraper {
                                             curRow.put(curArg.getKey(), curArg.getValue());
                                         }
                                     }
-                                    if (scraperConfig.markers != null) {
-                                        for (Map.Entry<String, String> curMarker : scraperConfig.markers.entrySet()) {
+                                    if (configuration.markers != null) {
+                                        for (Map.Entry<String, String> curMarker : configuration.markers.entrySet()) {
                                             curRow.put(curMarker.getKey(), curMarker.getValue());
                                         }
                                     }
@@ -139,23 +134,23 @@ public class AgileScraper {
                                 //
                                 //  Second level
                                 //
-                                if (scraperConfig.secondLevelName != null && !scraperConfig.secondLevelName.isEmpty()) {
+                                if (configuration.secondLevelName != null && !configuration.secondLevelName.isEmpty()) {
                                     ICommonParser secondLevelParser = new RegExParser();
 
 
                                     for (Map<String, String> curRow : parseResult.getResult()) {
-                                        String secondLevelURL = curRow.get(scraperConfig.secondLevelName);
-                                        secondLevelProvider.setBaseUrl(scraperConfig.secondLevelBaseUrl + secondLevelURL);
+                                        String secondLevelURL = curRow.get(configuration.secondLevelName);
+                                        secondLevelProvider.setBaseUrl(configuration.secondLevelBaseUrl + secondLevelURL);
                                         secondLevelProvider.requestSource()
                                                 .subscribe(secondLevelSource -> {
                                                     secondLevelParser.setSource(secondLevelSource);
-                                                    secondLevelParser.setPattern(scraperConfig.secondLevelPattern);
-                                                    secondLevelParser.setMatchNames(scraperConfig.secondLevelBindings.keySet());
-                                                    secondLevelParser.setBindings(scraperConfig.secondLevelBindings);
+                                                    secondLevelParser.setPattern(configuration.secondLevelPattern);
+                                                    secondLevelParser.setMatchNames(configuration.secondLevelBindings.keySet());
+                                                    secondLevelParser.setBindings(configuration.secondLevelBindings);
                                                     secondLevelParser.parse()
                                                             .subscribe(secondLevelParseResult -> {
                                                                 for (Map<String, String> SL_curRow : secondLevelParseResult.getResult()) {
-                                                                    for (String curName : scraperConfig.secondLevelBindings.values()) {
+                                                                    for (String curName : configuration.secondLevelBindings.values()) {
                                                                         curRow.put(curName, SL_curRow.get(curName));
                                                                     }
                                                                 }
@@ -170,6 +165,6 @@ public class AgileScraper {
                 });
             } // for firstPageNum
         }
-        while (scraperConfig.requestArguments.paramProvider.generateNext());// while generateNext
+        while (configuration.requestArguments.paramProvider.generateNext());// while generateNext
     } // run()
 }
