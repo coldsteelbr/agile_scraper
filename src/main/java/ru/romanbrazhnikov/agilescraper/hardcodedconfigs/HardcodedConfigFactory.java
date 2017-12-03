@@ -92,7 +92,7 @@ public class HardcodedConfigFactory {
         configuration.cookies = new Cookies();
         configuration.cookies.mCookieList = new ArrayList<>();
         configuration.cookies.mCookieList.add(
-                new Cookie("PHPSESSID", "v555g65b8tf86bpngglsnu7ja0", "prosto.tomsk.ru"));
+                new Cookie("PHPSESSID", "h85fc5nah05lm0qa44ag4qrnl1", "prosto.tomsk.ru"));
 
         configuration.destinationName = "prosto_tomsk";
         configuration.firstLevelPattern = "<tr\\s*id\\s*=\\s*\"offer[^>]*>\\s*\n" +

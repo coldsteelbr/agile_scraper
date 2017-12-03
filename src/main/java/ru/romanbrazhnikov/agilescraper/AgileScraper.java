@@ -3,15 +3,18 @@ package ru.romanbrazhnikov.agilescraper;
 import io.reactivex.functions.Consumer;
 import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.HardcodedConfigFactory;
 import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.PrimitiveConfiguration;
+import ru.romanbrazhnikov.agilescraper.pagecount.PageCountProvider;
+import ru.romanbrazhnikov.agilescraper.paramstringgenerator.ArgumentedParamString;
 import ru.romanbrazhnikov.agilescraper.parser.ICommonParser;
 import ru.romanbrazhnikov.agilescraper.parser.ParseResult;
 import ru.romanbrazhnikov.agilescraper.parser.RegExParser;
 import ru.romanbrazhnikov.agilescraper.resultsaver.OnSuccessParseConsumerCSV;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpSourceProvider;
-import ru.romanbrazhnikov.agilescraper.paramstringgenerator.ArgumentedParamString;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -26,12 +29,27 @@ public class AgileScraper {
         HttpSourceProvider mySourceProvider = initHttpSourceProvider(configuration);
 
 
-        //
-        // parser
-        //
+        // init FIRST level parser
         // TODO: invert dependency or build
-        ICommonParser parser = new RegExParser();
+        ICommonParser firstLevelParser = new RegExParser();
+        firstLevelParser.setMatchNames(configuration.firstLevelBindings.keySet());
+        firstLevelParser.setBindings(configuration.firstLevelBindings);
+        firstLevelParser.setPattern(configuration.firstLevelPattern);
 
+        // init SECOND level parser
+        ICommonParser secondLevelParser = new RegExParser();
+        secondLevelParser.setPattern(configuration.secondLevelPattern);
+        secondLevelParser.setMatchNames(configuration.secondLevelBindings.keySet());
+        secondLevelParser.setBindings(configuration.secondLevelBindings);
+
+        // init PAGE count parser
+        ICommonParser pageCountParser = new RegExParser();
+        Set<String> maxPageNumName = new HashSet<>();
+        maxPageNumName.add(PrimitiveConfiguration.PAGE_NUM_NAME);
+        pageCountParser.setMatchNames(maxPageNumName);
+        pageCountParser.setPattern(configuration.maxPagePattern);
+
+        // init second level provider
         HttpSourceProvider secondLevelProvider = new HttpSourceProvider();
 
         //
@@ -42,112 +60,110 @@ public class AgileScraper {
             String currentParamString = currentArgString.mParamString;
 
             //
-            // page count
+            //  PAGE COUNT
             //
 
-            // requesting first page for
-            HttpSourceProvider pageCountSourceProvider = new HttpSourceProvider();
-            pageCountSourceProvider.setBaseUrl(configuration.baseUrl);
-            pageCountSourceProvider.setQueryParamString(
-                    currentParamString
-                            .replace(HardcodedConfigFactory.PARAM_PAGE, String.valueOf(configuration.firstPageNum)));
-            if (configuration.cookies != null) {
-                if (configuration.cookies.mCookieList != null) {
-                    pageCountSourceProvider.setCustomCookies(configuration.cookies.mCookieList);
-                }
-            }
-            List<Integer> tempIntLst = new ArrayList<>();
-            pageCountSourceProvider.requestSource()
-                    .subscribe(source -> {
-                        Set<String> maxPageNumName = new HashSet<>();
-                        maxPageNumName.add(PrimitiveConfiguration.PAGE_NUM_NAME);
-                        parser.setMatchNames(maxPageNumName);
-                        parser.setPattern(configuration.maxPagePattern);
-                        parser.setSource(source);
-                        parser.parse().map(parseResult -> {
-                            int curMax;
-                            int totalMax = configuration.firstPageNum;
-                            for (Map<String, String> curRow : parseResult.getResult()) {
-                                curMax = Integer.parseInt(curRow.get(PrimitiveConfiguration.PAGE_NUM_NAME));
-                                totalMax = curMax > totalMax ? curMax : totalMax;
-                            }
-                            return totalMax;
-                        }).subscribe((Consumer<Integer>) tempIntLst::add);
-                    });
-            System.out.println("MaxPage: " + tempIntLst.get(0));
-            int maxPageValue = tempIntLst.get(0);
+            // init
+            int maxPageValue;
+            FinalBuffer<Integer> maxPageFinal = new FinalBuffer<>();
 
-            // read all pages
+            // page count provider
+            PageCountProvider pageCountProvider = new PageCountProvider(configuration, pageCountParser, currentParamString);
+            pageCountProvider.getPageCount().subscribe(
+                    integer -> maxPageFinal.value = integer,
+                    throwable -> {
+                        // TODO: catch errors
+                        maxPageFinal.value = configuration.firstPageNum;
+                    }
+            );
+            maxPageValue = maxPageFinal.value;
+            System.out.println("Page count: " + maxPageValue);
+
+            //
+            // READING ALL PAGES
+            //
+
+            // init Success consumer
             Consumer<ParseResult> onSuccessConsumer = new OnSuccessParseConsumerCSV(configuration.destinationName);
+
+            // walking thru pages
             for (int i = configuration.firstPageNum; i <= maxPageValue; i += configuration.pageStep) {
+                // setting params for source provider
                 mySourceProvider.setQueryParamString(currentParamString.replace(HardcodedConfigFactory.PARAM_PAGE, String.valueOf(i)));
+                // delay before starting requests
                 try {
                     MILLISECONDS.sleep(configuration.delayInMillis);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+                // requesting source
                 mySourceProvider.requestSource().subscribe(s -> {
-                    parser.setMatchNames(configuration.firstLevelBindings.keySet());
-                    parser.setBindings(configuration.firstLevelBindings);
-                    parser.setPattern(configuration.firstLevelPattern);
-                    parser.setSource(s);
-                    parser.parse()
-                            .map(parseResult -> {
-                                //
-                                // ADDING MARKERS and ARGS
-                                //
-                                for (Map<String, String> curRow : parseResult.getResult()) {
-                                    if (currentArgString.mFieldsArguments != null) {
-                                        for (Map.Entry<String, String> curArg : currentArgString.mFieldsArguments.entrySet()) {
-                                            curRow.put(curArg.getKey(), curArg.getValue());
-                                        }
-                                    }
-                                    if (configuration.markers != null) {
-                                        for (Map.Entry<String, String> curMarker : configuration.markers.entrySet()) {
-                                            curRow.put(curMarker.getKey(), curMarker.getValue());
-                                        }
-                                    }
-                                }
-                                return parseResult;
-                            })
-
-                            .map(parseResult -> {
-                                //
-                                //  Second level
-                                //
-                                if (configuration.secondLevelName != null && !configuration.secondLevelName.isEmpty()) {
-                                    ICommonParser secondLevelParser = new RegExParser();
-
-
-                                    for (Map<String, String> curRow : parseResult.getResult()) {
-                                        String secondLevelURL = curRow.get(configuration.secondLevelName);
-                                        secondLevelProvider.setBaseUrl(configuration.secondLevelBaseUrl + secondLevelURL);
-                                        secondLevelProvider.requestSource()
-                                                .subscribe(secondLevelSource -> {
-                                                    secondLevelParser.setSource(secondLevelSource);
-                                                    secondLevelParser.setPattern(configuration.secondLevelPattern);
-                                                    secondLevelParser.setMatchNames(configuration.secondLevelBindings.keySet());
-                                                    secondLevelParser.setBindings(configuration.secondLevelBindings);
-                                                    secondLevelParser.parse()
-                                                            .subscribe(secondLevelParseResult -> {
-                                                                for (Map<String, String> SL_curRow : secondLevelParseResult.getResult()) {
-                                                                    for (String curName : configuration.secondLevelBindings.values()) {
-                                                                        curRow.put(curName, SL_curRow.get(curName));
-                                                                    }
-                                                                }
-                                                            });
-                                                });
-                                    }
-                                }
-                                return parseResult;
-                            })
-
+                    // setting parser
+                    firstLevelParser.setSource(s);
+                    // parsing
+                    firstLevelParser.parse()
+                            // adding markers and arguments
+                            .map(parseResult -> addMarkersAndArguments(configuration, currentArgString, parseResult))
+                            // getting second level if necessary
+                            .map(parseResult -> getSecondLevel(configuration, secondLevelParser, secondLevelProvider, parseResult))
+                            // consuming the result
                             .subscribe(onSuccessConsumer, Throwable::printStackTrace);
                 });
             } // for firstPageNum
         }
         while (configuration.requestArguments.paramProvider.generateNext());// while generateNext
     } // run()
+
+    private ParseResult getSecondLevel(PrimitiveConfiguration configuration, ICommonParser secondLevelParser, HttpSourceProvider secondLevelProvider, ParseResult parseResult) {
+        //
+        //  Second level
+        //
+        // if there's need for second level...
+        if (configuration.secondLevelName != null && !configuration.secondLevelName.isEmpty()) {
+            String secondLevelURL;
+            // getting second level for each first level row
+            for (Map<String, String> curRow : parseResult.getResult()) {
+                secondLevelURL = curRow.get(configuration.secondLevelName);
+                secondLevelProvider.setBaseUrl(configuration.secondLevelBaseUrl + secondLevelURL);
+
+                // requesting second level
+                secondLevelProvider.requestSource()
+                        .subscribe(secondLevelSource -> {
+                            // parsing second level
+                            secondLevelParser.setSource(secondLevelSource);
+                            secondLevelParser.parse()
+                                    .subscribe(secondLevelParseResult -> {
+                                        // adding second level result to a total result
+                                        for (Map<String, String> SL_curRow : secondLevelParseResult.getResult()) {
+                                            for (String curName : configuration.secondLevelBindings.values()) {
+                                                curRow.put(curName, SL_curRow.get(curName));
+                                            }
+                                        }
+                                    });
+                        });
+            }
+        }
+        return parseResult;
+    }
+
+    private ParseResult addMarkersAndArguments(PrimitiveConfiguration configuration, ArgumentedParamString currentArgString, ParseResult parseResult) {
+        //
+        // ADDING MARKERS and ARGS
+        //
+        for (Map<String, String> curRow : parseResult.getResult()) {
+            if (currentArgString.mFieldsArguments != null) {
+                for (Map.Entry<String, String> curArg : currentArgString.mFieldsArguments.entrySet()) {
+                    curRow.put(curArg.getKey(), curArg.getValue());
+                }
+            }
+            if (configuration.markers != null) {
+                for (Map.Entry<String, String> curMarker : configuration.markers.entrySet()) {
+                    curRow.put(curMarker.getKey(), curMarker.getValue());
+                }
+            }
+        }
+        return parseResult;
+    }
 
     private HttpSourceProvider initHttpSourceProvider(PrimitiveConfiguration configuration) {
         //
