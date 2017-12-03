@@ -22,44 +22,17 @@ public class AgileScraper {
 
         System.out.println("Agile scraper ran");
 
+        // TODO: make a builder
+        HttpSourceProvider mySourceProvider = initHttpSourceProvider(configuration);
 
-        //
-        // source provider
-        //
-        HttpSourceProvider mySourceProvider = new HttpSourceProvider();
-        mySourceProvider.setBaseUrl(configuration.baseUrl);
-        mySourceProvider.setClientCharset(configuration.clientEcoding);
-        mySourceProvider.setHttpMethod(configuration.method);
-        // ... cookies
-        if (configuration.cookies != null) {
-            // custom
-            if (configuration.cookies.mCookieList != null) {
-                mySourceProvider.setCustomCookies(configuration.cookies.mCookieList);
-            }
-
-            // auto
-            if (configuration.cookies.mCookieRules != null) {
-                // request necessary page and get cookie headers from response
-                HttpSourceProvider cookieProvider = new HttpSourceProvider();
-                cookieProvider.setBaseUrl(configuration.cookies.mCookieRules.mRequestCookiesAddress);
-                cookieProvider.setQueryParamString(configuration.cookies.mCookieRules.mRequestCookiesParamString);
-                cookieProvider.setHttpMethod(HttpMethods.valueOf(configuration.cookies.mCookieRules.mRequestCookiesMethod));
-                cookieProvider.requestSource().subscribe(
-                        System.out::println
-                ).dispose();
-
-                mySourceProvider.setCookiesHeadersToRequest(cookieProvider.getCookieHeadersFromResponse());
-            }
-        }
 
         //
         // parser
         //
+        // TODO: invert dependency or build
         ICommonParser parser = new RegExParser();
 
-
         HttpSourceProvider secondLevelProvider = new HttpSourceProvider();
-
 
         //
         // PARSING AND SAVING
@@ -71,7 +44,6 @@ public class AgileScraper {
             //
             // page count
             //
-            final String pageNumName = "PAGENUM";
 
             // requesting first page for
             HttpSourceProvider pageCountSourceProvider = new HttpSourceProvider();
@@ -88,7 +60,7 @@ public class AgileScraper {
             pageCountSourceProvider.requestSource()
                     .subscribe(source -> {
                         Set<String> maxPageNumName = new HashSet<>();
-                        maxPageNumName.add(pageNumName);
+                        maxPageNumName.add(PrimitiveConfiguration.PAGE_NUM_NAME);
                         parser.setMatchNames(maxPageNumName);
                         parser.setPattern(configuration.maxPagePattern);
                         parser.setSource(source);
@@ -96,7 +68,7 @@ public class AgileScraper {
                             int curMax;
                             int totalMax = configuration.firstPageNum;
                             for (Map<String, String> curRow : parseResult.getResult()) {
-                                curMax = Integer.parseInt(curRow.get(pageNumName));
+                                curMax = Integer.parseInt(curRow.get(PrimitiveConfiguration.PAGE_NUM_NAME));
                                 totalMax = curMax > totalMax ? curMax : totalMax;
                             }
                             return totalMax;
@@ -176,4 +148,36 @@ public class AgileScraper {
         }
         while (configuration.requestArguments.paramProvider.generateNext());// while generateNext
     } // run()
+
+    private HttpSourceProvider initHttpSourceProvider(PrimitiveConfiguration configuration) {
+        //
+        // source provider
+        //
+        HttpSourceProvider mySourceProvider = new HttpSourceProvider();
+        mySourceProvider.setBaseUrl(configuration.baseUrl);
+        mySourceProvider.setClientCharset(configuration.clientEcoding);
+        mySourceProvider.setHttpMethod(configuration.method);
+        // ... cookies
+        if (configuration.cookies != null) {
+            // custom
+            if (configuration.cookies.mCookieList != null) {
+                mySourceProvider.setCustomCookies(configuration.cookies.mCookieList);
+            }
+
+            // auto
+            if (configuration.cookies.mCookieRules != null) {
+                // request necessary page and get cookie headers from response
+                HttpSourceProvider cookieProvider = new HttpSourceProvider();
+                cookieProvider.setBaseUrl(configuration.cookies.mCookieRules.mRequestCookiesAddress);
+                cookieProvider.setQueryParamString(configuration.cookies.mCookieRules.mRequestCookiesParamString);
+                cookieProvider.setHttpMethod(HttpMethods.valueOf(configuration.cookies.mCookieRules.mRequestCookiesMethod));
+                cookieProvider.requestSource().subscribe(
+                        System.out::println
+                ).dispose();
+
+                mySourceProvider.setCookiesHeadersToRequest(cookieProvider.getCookieHeadersFromResponse());
+            }
+        }
+        return mySourceProvider;
+    }
 }
