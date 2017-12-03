@@ -56,28 +56,15 @@ public class AgileScraper {
         // PARSING AND SAVING
         // for all request arguments
         do {
+            // getting current argumented string
             ArgumentedParamString currentArgString = configuration.requestArguments.paramProvider.getCurrent();
             String currentParamString = currentArgString.mParamString;
 
             //
             //  PAGE COUNT
             //
+            int maxPageValue = getMaxPageValue(configuration, pageCountParser, currentParamString);
 
-            // init
-            int maxPageValue;
-            FinalBuffer<Integer> maxPageFinal = new FinalBuffer<>();
-
-            // page count provider
-            PageCountProvider pageCountProvider = new PageCountProvider(configuration, pageCountParser, currentParamString);
-            pageCountProvider.getPageCount().subscribe(
-                    integer -> maxPageFinal.value = integer,
-                    throwable -> {
-                        // TODO: catch errors
-                        maxPageFinal.value = configuration.firstPageNum;
-                    }
-            );
-            maxPageValue = maxPageFinal.value;
-            System.out.println("Page count: " + maxPageValue);
 
             //
             // READING ALL PAGES
@@ -86,20 +73,25 @@ public class AgileScraper {
             // init Success consumer
             Consumer<ParseResult> onSuccessConsumer = new OnSuccessParseConsumerCSV(configuration.destinationName);
 
-            // walking thru pages
+            // walking through all pages
             for (int i = configuration.firstPageNum; i <= maxPageValue; i += configuration.pageStep) {
+
                 // setting params for source provider
                 mySourceProvider.setQueryParamString(currentParamString.replace(HardcodedConfigFactory.PARAM_PAGE, String.valueOf(i)));
+
                 // delay before starting requests
                 try {
                     MILLISECONDS.sleep(configuration.delayInMillis);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+
                 // requesting source
                 mySourceProvider.requestSource().subscribe(s -> {
+
                     // setting parser
                     firstLevelParser.setSource(s);
+
                     // parsing
                     firstLevelParser.parse()
                             // adding markers and arguments
@@ -113,6 +105,25 @@ public class AgileScraper {
         }
         while (configuration.requestArguments.paramProvider.generateNext());// while generateNext
     } // run()
+
+    private int getMaxPageValue(PrimitiveConfiguration configuration, ICommonParser pageCountParser, String currentParamString) {
+        // init
+        int maxPageValue;
+        FinalBuffer<Integer> maxPageFinal = new FinalBuffer<>();
+
+        // page count provider
+        PageCountProvider pageCountProvider = new PageCountProvider(configuration, pageCountParser, currentParamString);
+        pageCountProvider.getPageCount().subscribe(
+                integer -> maxPageFinal.value = integer,
+                throwable -> {
+                    // TODO: catch errors
+                    maxPageFinal.value = configuration.firstPageNum;
+                }
+        );
+        maxPageValue = maxPageFinal.value;
+        System.out.println("Page count: " + maxPageValue);
+        return maxPageValue;
+    }
 
     private ParseResult getSecondLevel(PrimitiveConfiguration configuration, ICommonParser secondLevelParser, HttpSourceProvider secondLevelProvider, ParseResult parseResult) {
         //
