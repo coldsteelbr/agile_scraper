@@ -7,8 +7,9 @@ import ru.romanbrazhnikov.agilescraper.parser.ICommonParser;
 import ru.romanbrazhnikov.agilescraper.parser.ParseResult;
 import ru.romanbrazhnikov.agilescraper.parser.RegExParser;
 import ru.romanbrazhnikov.agilescraper.resultsaver.OnSuccessParseConsumerCSV;
+import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpSourceProvider;
-import ru.romanbrazhnikov.agilescraper.sourcereader.ArgumentedParamString;
+import ru.romanbrazhnikov.agilescraper.paramstringgenerator.ArgumentedParamString;
 
 import java.util.*;
 
@@ -39,6 +40,15 @@ public class AgileScraper {
             // auto
             if (configuration.cookies.mCookieRules != null) {
                 // request necessary page and get cookie headers from response
+                HttpSourceProvider cookieProvider = new HttpSourceProvider();
+                cookieProvider.setBaseUrl(configuration.cookies.mCookieRules.mRequestCookiesAddress);
+                cookieProvider.setQueryParamString(configuration.cookies.mCookieRules.mRequestCookiesParamString);
+                cookieProvider.setHttpMethod(HttpMethods.valueOf(configuration.cookies.mCookieRules.mRequestCookiesMethod));
+                cookieProvider.requestSource().subscribe(
+                        System.out::println
+                ).dispose();
+
+                mySourceProvider.setCookiesHeadersToRequest(cookieProvider.getCookieHeadersFromResponse());
             }
         }
 
@@ -66,7 +76,6 @@ public class AgileScraper {
             // requesting first page for
             HttpSourceProvider pageCountSourceProvider = new HttpSourceProvider();
             pageCountSourceProvider.setBaseUrl(configuration.baseUrl);
-            // FIXME: Param string must be built for every combination!!!!!!!!!!!!!!!
             pageCountSourceProvider.setQueryParamString(
                     currentParamString
                             .replace(HardcodedConfigFactory.PARAM_PAGE, String.valueOf(configuration.firstPageNum)));

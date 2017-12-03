@@ -9,6 +9,6 @@ public class Main {
         HardcodedConfigFactory configFactory = new HardcodedConfigFactory();
         //PrimitiveConfiguration configuration = configFactory.getSpranCommSell();
         //PrimitiveConfiguration configuration = configFactory.getProstoTomskCommSell();
-        scraper.run(configFactory.getSpranCommSell());
+        scraper.run(configFactory.getProstoTomskCommRent());
     }
 }

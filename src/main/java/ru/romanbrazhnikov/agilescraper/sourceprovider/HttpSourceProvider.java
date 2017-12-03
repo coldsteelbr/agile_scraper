@@ -3,11 +3,11 @@ package ru.romanbrazhnikov.agilescraper.sourceprovider;
 import io.reactivex.Single;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.cookies.Cookie;
 
-
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -60,14 +60,18 @@ public class HttpSourceProvider {
                         break;
                     case POST:
                         myURL = new URL(mBaseUrl);
+                        byte[] postData = mQueryParamString.getBytes(StandardCharsets.UTF_8);
+
                         httpConnection = (HttpURLConnection) myURL.openConnection();
+                        httpConnection.setInstanceFollowRedirects(false);
                         httpConnection.setDoOutput(true); // Triggers POST.
-                        httpConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + mClientCharset);
+                        httpConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + StandardCharsets.UTF_8.displayName());
+                        httpConnection.setUseCaches(false);
                         addCookiesIfAny(httpConnection);
 
                         // Sending POST form
                         try (OutputStream output = httpConnection.getOutputStream()) {
-                            output.write(mQueryParamString.getBytes(mClientCharset));
+                            output.write(postData);
                         }
 
                         break;
@@ -120,7 +124,7 @@ public class HttpSourceProvider {
         });
     }
 
-    private void addCookiesIfAny(HttpURLConnection httpConnection){
+    private void addCookiesIfAny(HttpURLConnection httpConnection) {
         // Adding cookies if any
         if (mCookiesToRequest != null) {
             for (String currentCookie : mCookiesToRequest) {

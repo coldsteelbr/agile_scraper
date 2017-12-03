@@ -1,4 +1,4 @@
-package ru.romanbrazhnikov.agilescraper.sourcereader;
+package ru.romanbrazhnikov.agilescraper.paramstringgenerator;
 
 import ru.romanbrazhnikov.agilescraper.requestarguments.Argument;
 
@@ -6,13 +6,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ParamStringProvider {
+public class ParamStringGenerator {
     private String mParamString;
     private List<Argument> mArgumentList;
     private Integer[] positions;
 
 
-    public ParamStringProvider(String paramString, List<Argument> arguments) {
+    public ParamStringGenerator(String paramString, List<Argument> arguments) {
         mParamString = paramString;
         mArgumentList = arguments;
         if (arguments != null) {

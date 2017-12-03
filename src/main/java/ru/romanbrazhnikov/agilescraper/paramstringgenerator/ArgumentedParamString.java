@@ -1,4 +1,4 @@
-package ru.romanbrazhnikov.agilescraper.sourcereader;
+package ru.romanbrazhnikov.agilescraper.paramstringgenerator;
 
 import java.util.Map;
 
