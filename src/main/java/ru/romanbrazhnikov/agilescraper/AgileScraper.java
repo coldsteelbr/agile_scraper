@@ -63,7 +63,7 @@ public class AgileScraper {
             //
             //  PAGE COUNT
             //
-            int maxPageValue = getMaxPageValue(configuration, pageCountParser, currentParamString);
+            int maxPageValue = configuration.firstPageNum;
 
 
             //
@@ -81,12 +81,13 @@ public class AgileScraper {
 
                 // delay
                 delayForAWhile(configuration);
-                
-                // requesting source
-                mySourceProvider.requestSource().subscribe(s -> {
 
+                FinalBuffer<String> finalSource = new FinalBuffer<>();
+                // requesting source
+                mySourceProvider.requestSource().subscribe(source -> {
+                    finalSource.value = source;
                     // setting parser
-                    firstLevelParser.setSource(s);
+                    firstLevelParser.setSource(source);
 
                     // parsing
                     firstLevelParser.parse()
@@ -97,6 +98,12 @@ public class AgileScraper {
                             // consuming the result
                             .subscribe(onSuccessConsumer, Throwable::printStackTrace);
                 });
+
+                // being on the last page - try to refresh the max page value
+                if(i == maxPageValue){
+                    //  PAGE COUNT
+                    maxPageValue = getMaxPageValue(finalSource.value, configuration.firstPageNum, pageCountParser);
+                }
             } // for firstPageNum
         }
         while (configuration.requestArguments.paramProvider.generateNext());// while generateNext
@@ -111,18 +118,18 @@ public class AgileScraper {
         }
     }
 
-    private int getMaxPageValue(PrimitiveConfiguration configuration, ICommonParser pageCountParser, String currentParamString) {
+    private int getMaxPageValue(String source, int firstPageNum, ICommonParser pageCountParser) {
         // init
         int maxPageValue;
         FinalBuffer<Integer> maxPageFinal = new FinalBuffer<>();
 
         // page count provider
-        PageCountProvider pageCountProvider = new PageCountProvider(configuration, pageCountParser, currentParamString);
+        PageCountProvider pageCountProvider = new PageCountProvider(source, firstPageNum, pageCountParser);
         pageCountProvider.getPageCount().subscribe(
                 integer -> maxPageFinal.value = integer,
                 throwable -> {
                     // TODO: catch errors
-                    maxPageFinal.value = configuration.firstPageNum;
+                    maxPageFinal.value = firstPageNum;
                 }
         );
         maxPageValue = maxPageFinal.value;

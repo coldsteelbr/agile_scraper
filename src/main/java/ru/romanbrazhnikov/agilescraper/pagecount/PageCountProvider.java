@@ -1,61 +1,44 @@
 package ru.romanbrazhnikov.agilescraper.pagecount;
 
 import io.reactivex.Single;
-import io.reactivex.functions.Consumer;
-import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.HardcodedConfigFactory;
+import ru.romanbrazhnikov.agilescraper.FinalBuffer;
 import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.PrimitiveConfiguration;
 import ru.romanbrazhnikov.agilescraper.parser.ICommonParser;
-import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpSourceProvider;
 
-import java.util.*;
+import java.util.Map;
 
 public class PageCountProvider {
-    private PrimitiveConfiguration mConfiguration;
+    private String mSource;
     private ICommonParser mParser;
-    private String mParamString;
+    private int mFirstPageNum;
 
-    public PageCountProvider(PrimitiveConfiguration configuration, ICommonParser parser, String paramString) {
-        mConfiguration = configuration;
+    public PageCountProvider(String source, int firstPageNum, ICommonParser parser) {
+        mSource = source;
         mParser = parser;
-        mParamString = paramString;
+        mFirstPageNum = firstPageNum;
     }
 
     public Single<Integer> getPageCount() {
         //
         // page count
         //
-
-        // requesting first page for
-        HttpSourceProvider pageCountSourceProvider = new HttpSourceProvider();
-        pageCountSourceProvider.setBaseUrl(mConfiguration.baseUrl);
-        pageCountSourceProvider.setQueryParamString(
-                mParamString
-                        .replace(HardcodedConfigFactory.PARAM_PAGE, String.valueOf(mConfiguration.firstPageNum)));
-        if (mConfiguration.cookies != null) {
-            if (mConfiguration.cookies.mCookieList != null) {
-                pageCountSourceProvider.setCustomCookies(mConfiguration.cookies.mCookieList);
-            }
-        }
-        List<Integer> tempIntLst = new ArrayList<>();
+        FinalBuffer<Integer> finalPageInt = new FinalBuffer<>();
+        finalPageInt.value = 0;
         return Single.create(emitter -> {
-            pageCountSourceProvider.requestSource()
-                    .subscribe(source -> {
-                        mParser.setSource(source);
-                        mParser.parse().map(parseResult -> {
-                            int curMax;
-                            int totalMax = mConfiguration.firstPageNum;
-                            for (Map<String, String> curRow : parseResult.getResult()) {
-                                curMax = Integer.parseInt(curRow.get(PrimitiveConfiguration.PAGE_NUM_NAME));
-                                totalMax = curMax > totalMax ? curMax : totalMax;
-                            }
-                            return totalMax;
-                        }).subscribe((Consumer<Integer>) tempIntLst::add);
-                        if (tempIntLst.size() == 1) {
-                            emitter.onSuccess(tempIntLst.get(0));
-                        } else {
-                            emitter.onSuccess(0);
-                        }
-                    });
+
+            mParser.setSource(mSource);
+            mParser.parse().map(parseResult -> {
+                int curMax;
+                int totalMax = mFirstPageNum;
+                for (Map<String, String> curRow : parseResult.getResult()) {
+                    curMax = Integer.parseInt(curRow.get(PrimitiveConfiguration.PAGE_NUM_NAME));
+                    totalMax = curMax > totalMax ? curMax : totalMax;
+                }
+                return totalMax;
+            }).subscribe(integer -> finalPageInt.value = integer);
+
+            emitter.onSuccess(finalPageInt.value);
+
         });
 
     }
