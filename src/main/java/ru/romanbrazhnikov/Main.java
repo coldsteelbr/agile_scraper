@@ -8,7 +8,8 @@ public class Main {
     public static void main(String[] args){
         AgileScraper scraper = new AgileScraper();
         HardcodedConfigFactory configFactory = new HardcodedConfigFactory();
-        PrimitiveConfiguration configuration = configFactory.getSpranCommSell();
+        //PrimitiveConfiguration configuration = configFactory.getSpranCommSell();
+        PrimitiveConfiguration configuration = configFactory.getSpranFlatSell();
         //PrimitiveConfiguration configuration = configFactory.getProstoTomskCommSell();
         //PrimitiveConfiguration configuration = configFactory.getProstoTomskCommRent();
         scraper.run(configuration);

@@ -31,8 +31,8 @@ public class RegExParser implements ICommonParser {
         mPattern = Pattern.compile(mPatternRegEx,
                 Pattern.CASE_INSENSITIVE | // A=a, B=b...
                         Pattern.UNICODE_CASE | // UNICODE mode on
-                        Pattern.COMMENTS |
-                        Pattern.DOTALL); // Comments and whitespaces permitted
+                        Pattern.COMMENTS |// Comments and whitespaces permitted
+                        Pattern.DOTALL); // ignore ends of lines
     }
 
     @Override

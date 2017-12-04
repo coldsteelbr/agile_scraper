@@ -79,13 +79,9 @@ public class AgileScraper {
                 // setting params for source provider
                 mySourceProvider.setQueryParamString(currentParamString.replace(HardcodedConfigFactory.PARAM_PAGE, String.valueOf(i)));
 
-                // delay before starting requests
-                try {
-                    MILLISECONDS.sleep(configuration.delayInMillis);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
+                // delay
+                delayForAWhile(configuration);
+                
                 // requesting source
                 mySourceProvider.requestSource().subscribe(s -> {
 
@@ -105,6 +101,15 @@ public class AgileScraper {
         }
         while (configuration.requestArguments.paramProvider.generateNext());// while generateNext
     } // run()
+
+    private void delayForAWhile(PrimitiveConfiguration configuration) {
+        // delay before starting requests
+        try {
+            MILLISECONDS.sleep(configuration.delayInMillis);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
     private int getMaxPageValue(PrimitiveConfiguration configuration, ICommonParser pageCountParser, String currentParamString) {
         // init

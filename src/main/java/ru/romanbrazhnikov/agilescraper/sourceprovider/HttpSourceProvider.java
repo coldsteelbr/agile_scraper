@@ -46,7 +46,7 @@ public class HttpSourceProvider {
         return Single.create(emitter -> {
             try {
                 // opening connection
-                URL myURL;// = new URL(mBaseUrl);
+                URL myURL = null;// = new URL(mBaseUrl);
                 HttpURLConnection httpConnection = null;// = (HttpURLConnection) myURL.openConnection();
 
 
@@ -54,7 +54,7 @@ public class HttpSourceProvider {
                 switch (mHttpMethod) {
 
                     case GET:
-                        myURL = new URL(mBaseUrl + "?" + mQueryParamString);
+                        myURL = new URL(mBaseUrl + (mQueryParamString != null ? "?" + mQueryParamString : ""));
                         httpConnection = (HttpURLConnection) myURL.openConnection();
                         addCookiesIfAny(httpConnection);
                         break;
@@ -76,6 +76,8 @@ public class HttpSourceProvider {
 
                         break;
                 }
+
+                System.out.println(myURL.toString());
                 // setting encoding
                 // TODO: TBD setting encoding from server
 

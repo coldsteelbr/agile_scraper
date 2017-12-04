@@ -12,10 +12,10 @@ import java.util.HashMap;
 
 public class HardcodedConfigFactory {
     public static final String PARAM_PAGE = "{[PAGE]}";
-    public static final String paramDistrict = "{[DISTRICT]}";
-    public static final String fieldDistrict = "district";
+    public static final String PARAM_DISTRICT = "{[DISTRICT]}";
+    public static final String FIELD_DISTRICT = "district";
 
-    public static final String paramString = "areas%5B0%5D=" + paramDistrict + "&currency=1&costMode=1&cities%5B0%5D=21&page=" + PARAM_PAGE;
+    public static final String paramString = "areas%5B0%5D=" + PARAM_DISTRICT + "&currency=1&costMode=1&cities%5B0%5D=21&page=" + PARAM_PAGE;
 
     public PrimitiveConfiguration getSpranCommSell() {
         PrimitiveConfiguration configuration = new PrimitiveConfiguration();
@@ -56,8 +56,8 @@ public class HardcodedConfigFactory {
         // Request arguments
         configuration.requestArguments.mArgumentList = new ArrayList<>();
         Argument argumentDistrict = new Argument();
-        argumentDistrict.name = paramDistrict;
-        argumentDistrict.field = fieldDistrict;
+        argumentDistrict.name = PARAM_DISTRICT;
+        argumentDistrict.field = FIELD_DISTRICT;
         argumentDistrict.mValues = new ArrayList<>();
         argumentDistrict.mValues.add(new Values("22", "Дзержинский"));
         argumentDistrict.mValues.add(new Values("23", "Железнодорожный"));
@@ -78,6 +78,72 @@ public class HardcodedConfigFactory {
 
         return configuration;
     }
+
+    public PrimitiveConfiguration getSpranFlatSell() {
+        PrimitiveConfiguration configuration = new PrimitiveConfiguration();
+
+        configuration.destinationName = "db_spran_flat_sale";
+        configuration.baseUrl = "http://spran.ru/sell/flat.html";
+        configuration.requestParams = "currency=1&costMode=1&cities[0]=21&areas[0]=" + PARAM_DISTRICT + "&page=" + PARAM_PAGE;
+        configuration.firstLevelPattern =
+                "<tr\\s*class[^>]*>\\s*\n" +
+                        "<td[^>]*>\\s*(?<FLATS>.*?)\\s*</td>\\s*\n" +
+                        "<td[^>]*>\\s*(?:.*?)</td>\\s*\n" +
+                        "<td[^>]*>\\s*<a[^h]*\\s*href\\s*=\\s*\"(?<SECONDLEVEL>.*?)\"[^>]*>\\s*(?<ADDRESS>.*?)\\s*</a>\\s*</td>\\s*\n" +
+                        "<td[^>]*>\\s*<span[^>]*>\\s*<span[^>]*>\\s*(?<SQUARE>.*?)\\s*</span>\\s*</span>\\s*</td>\\s*\n" +
+                        "<td[^>]*>\\s*<span[^>]*>\\s*(?<FLOOR>.*?)\\s*</span>\\s*</td>\\s*\n" +
+                        "<td[^>]*>\\s*<span[^>]*>\\s*(?<TOTALPRICE>.*?)\\s*</span>\\s*</td>\\s*\n" +
+                        "<td[^>]*>\\s*(?<CONTACT>.*?)\\s*</td>\\s*";
+        configuration.secondLevelPattern =
+                "комментарий\\s*продавца</h[1-6]+>\\s*\n" +
+                        "<p[^>]*>\\s*(?<NOTES>.*?)\\s*</p>";
+
+        configuration.firstLevelBindings = new HashMap<>();
+        configuration.firstLevelBindings.put("FLATS", "flats");
+        configuration.firstLevelBindings.put("ADDRESS", "address");
+        configuration.firstLevelBindings.put("CONTACT", "agency");
+        configuration.firstLevelBindings.put("FLOOR", "floor");
+        configuration.firstLevelBindings.put("SQUARE", "square");
+        configuration.firstLevelBindings.put("TOTALPRICE", "price");
+
+
+
+        //
+        //  Second Level
+        //
+        configuration.secondLevelName = PrimitiveConfiguration.SECOND_LEVEL_NAME;
+        configuration.firstLevelBindings.put(configuration.secondLevelName, configuration.secondLevelName);
+        configuration.secondLevelBindings = new HashMap<>();
+        configuration.secondLevelBindings.put("NOTES", "notes");
+
+        configuration.secondLevelBaseUrl = "http://spran.ru";
+
+        // Request arguments
+        configuration.requestArguments.mArgumentList = new ArrayList<>();
+        Argument argumentDistrict = new Argument();
+        argumentDistrict.name = PARAM_DISTRICT;
+        argumentDistrict.field = FIELD_DISTRICT;
+        argumentDistrict.mValues = new ArrayList<>();
+        argumentDistrict.mValues.add(new Values("22", "Дзержинский"));
+        argumentDistrict.mValues.add(new Values("23", "Железнодорожный"));
+        argumentDistrict.mValues.add(new Values("24", "Заельцовский"));
+        argumentDistrict.mValues.add(new Values("25", "Килининский"));
+        argumentDistrict.mValues.add(new Values("26", "Кировский"));
+        argumentDistrict.mValues.add(new Values("27", "Ленинский"));
+        argumentDistrict.mValues.add(new Values("29", "Октябрьский"));
+        argumentDistrict.mValues.add(new Values("30", "Первомайский"));
+        argumentDistrict.mValues.add(new Values("31", "Советский"));
+        argumentDistrict.mValues.add(new Values("32", "Центральный"));
+        configuration.requestArguments.mArgumentList.add(argumentDistrict);
+        configuration.requestArguments.initProvider(configuration.requestParams);
+
+        // Markers
+        configuration.markers.put("city", "Новосибирск");
+        configuration.markers.put("market", "кв. продажа");
+
+        return configuration;
+    }
+
 
     public PrimitiveConfiguration getProstoTomskCommSell() {
         PrimitiveConfiguration configuration = new PrimitiveConfiguration();
