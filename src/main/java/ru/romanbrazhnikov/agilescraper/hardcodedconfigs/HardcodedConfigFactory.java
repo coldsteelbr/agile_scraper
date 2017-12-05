@@ -107,7 +107,6 @@ public class HardcodedConfigFactory {
         configuration.firstLevelBindings.put("TOTALPRICE", "price");
 
 
-
         //
         //  Second Level
         //
@@ -247,6 +246,42 @@ public class HardcodedConfigFactory {
         configuration.firstLevelBindings.put("TOTALSQUARE", "total_square");
         configuration.firstLevelBindings.put("TOTALPRICE", "total_price");
 
+
+        return configuration;
+    }
+
+
+    public PrimitiveConfiguration getUpWorkDataScrapingJobs() {
+        PrimitiveConfiguration configuration = new PrimitiveConfiguration();
+
+        configuration.baseUrl = "https://www.upwork.com/o/jobs/browse/url";
+        configuration.requestParams = "page=" + PARAM_PAGE + "&q=Data+Scraping&sort=renew_time_int%2Bdesc";
+        configuration.requestArguments.initProvider(configuration.requestParams);
+
+        /*
+        configuration.cookies = new Cookies();
+        configuration.cookies.mCookieList = new ArrayList<>();
+        configuration.cookies.mCookieList.add(new Cookie("__cfduid","d8c18199319398fd7f6cd0e1a467749751512477687", ""));
+        configuration.cookies.mCookieList.add(new Cookie("device_view","full", ""));
+        configuration.cookies.mCookieList.add(new Cookie("recognized","1", ""));
+        configuration.cookies.mCookieList.add(new Cookie("console_user","romanfromrussia", ""));
+        configuration.cookies.mCookieList.add(new Cookie("master_access_token","eb8cce68.oauth2v1_1de1a62cbbf2c60af422a2f12cf200bb", ""));
+        configuration.cookies.mCookieList.add(new Cookie("oauth2_global_js_token","oauth2v1_df7f79fdf7bcddf04f7cf7b91ac01003", ""));
+        configuration.cookies.mCookieList.add(new Cookie("_ga","GA1.2.553355131.1512477691", ""));
+        configuration.cookies.mCookieList.add(new Cookie("_gid","GA1.2.123935093.1512477691", ""));
+        configuration.cookies.mCookieList.add(new Cookie("visitor_id","5.130.30.2.1512477688599860", ""));
+        configuration.cookies.mCookieList.add(new Cookie("current_organization_uid","889396507270238210", ""));
+        configuration.cookies.mCookieList.add(new Cookie("qt_visitor_id","5.44.168.89.1500834103535912", ""));
+        configuration.cookies.mCookieList.add(new Cookie("session_id","a3c18c487e73470ae521b08c19b811f8", ""));
+        configuration.cookies.mCookieList.add(new Cookie("company_last_accessed","d16763747", ""));
+        configuration.cookies.mCookieList.add(new Cookie("XSRF-TOKEN","a8d6ec3fa61059222343fc2e43991a53", ""));
+        configuration.cookies.mCookieList.add(new Cookie("sc.ASP.NET_SESSIONID","rtgfai31e00a3uhi0grrneu2", ""));
+        configuration.cookies.mCookieList.add(new Cookie("_px3", "d3adefec6f26be42e371ef5d4b35a4e1fadeb652debfb2f233c7db61c7184a3b:d2a7cXm0wUeLKu2Ceatf1zFPGxzo0j6T74Cjos24w8FvwrbY8EMo32nCYBXwIPHW5QLEwbhdLnBluTFhTaaRng==:1000:rNBC7/PU+kfiGK/EUjJK/UgH+OMvYamTDOY4vfx0kbRlThaKUITVGoahGvS/JAR2t30NgmCGlFsyCA1ggr72hpfsuwu13NXi1VwUWgNxYtOKti6J5azybr7441Ib8B6gG+vBLYL7SdBqS2NLBaS+YSH+zh9Y7wYStlA3nPtKqA4=", ""));
+*/
+        configuration.destinationName = "upwork_data_scraping";
+        configuration.firstLevelPattern = "\\{\"title\":\"(?<TITLE>.*?)\"";
+        configuration.firstLevelBindings = new HashMap<>();
+        configuration.firstLevelBindings.put("TITLE", "title");
 
         return configuration;
     }

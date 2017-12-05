@@ -9,9 +9,10 @@ public class Main {
         AgileScraper scraper = new AgileScraper();
         HardcodedConfigFactory configFactory = new HardcodedConfigFactory();
         //PrimitiveConfiguration configuration = configFactory.getSpranCommSell();
-        PrimitiveConfiguration configuration = configFactory.getSpranFlatSell();
+        //PrimitiveConfiguration configuration = configFactory.getSpranFlatSell();
         //PrimitiveConfiguration configuration = configFactory.getProstoTomskCommSell();
         //PrimitiveConfiguration configuration = configFactory.getProstoTomskCommRent();
+        PrimitiveConfiguration configuration = configFactory.getUpWorkDataScrapingJobs();
         scraper.run(configuration);
     }
 }

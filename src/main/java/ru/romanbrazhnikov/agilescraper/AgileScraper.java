@@ -38,9 +38,11 @@ public class AgileScraper {
 
         // init SECOND level parser
         ICommonParser secondLevelParser = new RegExParser();
-        secondLevelParser.setPattern(configuration.secondLevelPattern);
-        secondLevelParser.setMatchNames(configuration.secondLevelBindings.keySet());
-        secondLevelParser.setBindings(configuration.secondLevelBindings);
+        if(configuration.secondLevelPattern != null) {
+            secondLevelParser.setPattern(configuration.secondLevelPattern);
+            secondLevelParser.setMatchNames(configuration.secondLevelBindings.keySet());
+            secondLevelParser.setBindings(configuration.secondLevelBindings);
+        }
 
         // init PAGE count parser
         ICommonParser pageCountParser = new RegExParser();
