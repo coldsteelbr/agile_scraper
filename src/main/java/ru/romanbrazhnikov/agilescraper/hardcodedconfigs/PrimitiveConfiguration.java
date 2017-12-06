@@ -28,6 +28,9 @@ public class PrimitiveConfiguration {
     // markers
     public Map<String, String> markers = new HashMap<>();
 
+    // headers
+    public Map<String, String> headers;
+
     // cookies
     public Cookies cookies;
 

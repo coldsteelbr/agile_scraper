@@ -27,6 +27,7 @@ public class AgileScraper {
 
         // TODO: make a builder
         HttpSourceProvider mySourceProvider = initHttpSourceProvider(configuration);
+        mySourceProvider.setHeaders(configuration.headers);
 
 
         // init FIRST level parser
