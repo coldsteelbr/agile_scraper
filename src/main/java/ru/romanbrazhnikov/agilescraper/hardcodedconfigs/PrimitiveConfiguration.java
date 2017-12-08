@@ -10,10 +10,14 @@ import java.util.Map;
 public class PrimitiveConfiguration {
     public static final String PAGE_NUM_NAME = "PAGENUM";
     public static final String SECOND_LEVEL_NAME = "SECONDLEVEL";
+    // config name
+    public String configName;
+
     // reader
     public long delayInMillis = 334;
     public String baseUrl;
-    public String clientEcoding = "utf8";
+    public String urlDelimiter = "";
+    public String sourceEcoding = "utf8";
     public HttpMethods method = HttpMethods.GET;
     // request params
     public String requestParams;
@@ -42,11 +46,45 @@ public class PrimitiveConfiguration {
     public String secondLevelPattern;
 
     // second level specifics
-    public String secondLevelName;
+    public String secondLevelName = null;
     public String secondLevelBaseUrl;
 
     // level bindings (aliases)
     public Map<String, String> firstLevelBindings;
     public Map<String, String> secondLevelBindings;
 
+    public PrimitiveConfiguration(){}
+
+    public PrimitiveConfiguration(
+            String configName,
+            String baseUrl,
+            String urlDelimiter,
+            HttpMethods method,
+            String requestParams,
+            int firstPageNum,
+            int pageStep,
+            String maxPagePattern,
+            String destinationName,
+            String firstLevelPattern,
+            String secondLevelPattern,
+            String secondLevelName,
+            String secondLevelBaseUrl,
+            String encoding,
+            int delayInMillis) {
+        this.configName = configName;
+        this.baseUrl = baseUrl;
+        this.urlDelimiter = urlDelimiter;
+        this.method = method;
+        this.requestParams = requestParams;
+        this.firstPageNum = firstPageNum;
+        this.pageStep = pageStep;
+        this.maxPagePattern = maxPagePattern;
+        this.destinationName = destinationName;
+        this.firstLevelPattern = firstLevelPattern;
+        this.secondLevelPattern = secondLevelPattern;
+        this.secondLevelName = secondLevelName;
+        this.secondLevelBaseUrl = secondLevelBaseUrl;
+        this.sourceEcoding = encoding;
+        this.delayInMillis = delayInMillis;
+    }
 }

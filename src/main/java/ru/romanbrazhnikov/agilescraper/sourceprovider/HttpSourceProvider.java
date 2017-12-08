@@ -3,7 +3,6 @@ package ru.romanbrazhnikov.agilescraper.sourceprovider;
 import io.reactivex.Single;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.cookies.Cookie;
 
-import javax.net.ssl.HttpsURLConnection;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -47,7 +46,7 @@ public class HttpSourceProvider {
             try {
                 // opening connection
                 URL myURL = null;// = new URL(mBaseUrl);
-                HttpsURLConnection httpConnection = null;// = (HttpURLConnection) myURL.openConnection();
+                HttpURLConnection httpConnection = null;// = (HttpURLConnection) myURL.openConnection();
 
 
                 // METHOD
@@ -55,7 +54,7 @@ public class HttpSourceProvider {
 
                     case GET:
                         myURL = new URL(mBaseUrl + (mQueryParamString != null ? "?" + mQueryParamString : ""));
-                        httpConnection = (HttpsURLConnection) myURL.openConnection();
+                        httpConnection = (HttpURLConnection) myURL.openConnection();
                         addHeadersIfAny(httpConnection);
                         addCookiesIfAny(httpConnection);
                         break;
@@ -63,9 +62,9 @@ public class HttpSourceProvider {
                         myURL = new URL(mBaseUrl);
                         byte[] postData = mQueryParamString.getBytes(StandardCharsets.UTF_8);
 
-                        httpConnection = (HttpsURLConnection) myURL.openConnection();
+                        httpConnection = (HttpURLConnection) myURL.openConnection();
                         httpConnection.setRequestProperty("User-Agent", "");
-                        httpConnection.setRequestProperty("Accept","application/json, text/plain, */*");
+                        httpConnection.setRequestProperty("Accept", "application/json, text/plain, */*");
                         httpConnection.setInstanceFollowRedirects(false);
                         httpConnection.setDoOutput(true); // Triggers POST.
                         httpConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + StandardCharsets.UTF_8.displayName());
@@ -129,12 +128,13 @@ public class HttpSourceProvider {
         });
     }
 
-    public void setHeaders(Map<String, String> headers){
+    public void setHeaders(Map<String, String> headers) {
         mHeaders = headers;
     }
-    private void addHeadersIfAny(HttpsURLConnection httpConnection) {
-        if(mHeaders != null){
-            for(Map.Entry<String, String> currentHeader : mHeaders.entrySet()){
+
+    private void addHeadersIfAny(HttpURLConnection httpConnection) {
+        if (mHeaders != null) {
+            for (Map.Entry<String, String> currentHeader : mHeaders.entrySet()) {
                 httpConnection.setRequestProperty(currentHeader.getKey(), currentHeader.getValue());
             }
         }

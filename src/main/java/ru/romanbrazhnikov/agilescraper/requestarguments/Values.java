@@ -4,6 +4,8 @@ public class Values {
     public String argumentValue;
     public String fieldValue;
 
+    public Values(){}
+
     public Values(String argumentValue, String fieldValue) {
         this.argumentValue = argumentValue;
         this.fieldValue = fieldValue;

@@ -197,7 +197,7 @@ public class AgileScraper {
         //
         HttpSourceProvider mySourceProvider = new HttpSourceProvider();
         mySourceProvider.setBaseUrl(configuration.baseUrl);
-        mySourceProvider.setClientCharset(configuration.clientEcoding);
+        mySourceProvider.setClientCharset(configuration.sourceEcoding);
         mySourceProvider.setHttpMethod(configuration.method);
         // ... cookies
         if (configuration.cookies != null) {
@@ -212,7 +212,7 @@ public class AgileScraper {
                 HttpSourceProvider cookieProvider = new HttpSourceProvider();
                 cookieProvider.setBaseUrl(configuration.cookies.mCookieRules.mRequestCookiesAddress);
                 cookieProvider.setQueryParamString(configuration.cookies.mCookieRules.mRequestCookiesParamString);
-                cookieProvider.setHttpMethod(HttpMethods.valueOf(configuration.cookies.mCookieRules.mRequestCookiesMethod));
+                cookieProvider.setHttpMethod(HttpMethods.valueOf(configuration.cookies.mCookieRules.mRequestCookiesMethod.toUpperCase()));
                 cookieProvider.requestSource().subscribe(
                         System.out::println
                 ).dispose();

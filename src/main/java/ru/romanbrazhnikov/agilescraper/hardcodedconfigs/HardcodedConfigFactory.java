@@ -143,7 +143,6 @@ public class HardcodedConfigFactory {
         return configuration;
     }
 
-
     public PrimitiveConfiguration getProstoTomskCommSell() {
         PrimitiveConfiguration configuration = new PrimitiveConfiguration();
         configuration.method = HttpMethods.GET;
@@ -249,7 +248,6 @@ public class HardcodedConfigFactory {
 
         return configuration;
     }
-
 
     public PrimitiveConfiguration getUpWorkDataScrapingJobs() {
         PrimitiveConfiguration configuration = new PrimitiveConfiguration();
