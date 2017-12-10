@@ -48,7 +48,7 @@ public class RegExParser implements ICommonParser {
 
     private Single<ParseResult> getResult() {
         return Single.create(emitter -> {
-            InterruptableCharSequence ICS = new InterruptableCharSequence(mSource);
+            InterruptibleCharSequence ICS = new InterruptibleCharSequence(mSource);
             Matcher m = mPattern.matcher(ICS);
             mResultTable.clear();
 
