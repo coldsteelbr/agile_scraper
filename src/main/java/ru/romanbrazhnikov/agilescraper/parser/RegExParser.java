@@ -5,6 +5,7 @@ import io.reactivex.Single;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,12 +48,48 @@ public class RegExParser implements ICommonParser {
 
     private Single<ParseResult> getResult() {
         return Single.create(emitter -> {
-
-            Matcher m = mPattern.matcher(mSource);
+            InterruptableCharSequence ICS = new InterruptableCharSequence(mSource);
+            Matcher m = mPattern.matcher(ICS);
             mResultTable.clear();
 
+            // Heavy task handling init
+            HeavyCallable heavyMatcher = new HeavyCallable(m);
+            ExecutorService executorService = Executors.newSingleThreadExecutor();
+            boolean value = false;
+            Future<Boolean> futureValue;
+
             String currentKeyToPut;
-            while (m.find()) {
+            while (true) {
+                // init future value for matcher
+                futureValue = executorService.submit(heavyMatcher);
+
+                // trying to get future result
+                try {
+
+                    value = futureValue.get(4, TimeUnit.SECONDS);
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                } catch (TimeoutException e) {
+                    e.printStackTrace();
+                    executorService.shutdownNow();
+                    futureValue.cancel(true);
+                    executorService.shutdownNow();
+                    futureValue.cancel(true);
+                    emitter.onError(e);
+                    break;
+                } finally {
+                    if(!value){
+                        executorService.shutdown();
+                    }
+                }
+
+                if(!value) {
+                    break;
+                }
+
                 Map<String, String> currentResultRow = new HashMap<>();
                 for (String currentName : mGroupNames) {
                     try {
@@ -100,6 +137,21 @@ public class RegExParser implements ICommonParser {
 
         return getResult();
 
+    }
+
+    class HeavyCallable implements Callable<Boolean>
+    {
+
+        private Matcher mMatcher;
+
+        public HeavyCallable(Matcher matcher) {
+            mMatcher = matcher;
+        }
+
+        @Override
+        public Boolean call() throws Exception {
+            return mMatcher.find();
+        }
     }
 
 

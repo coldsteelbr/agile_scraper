@@ -1,6 +1,11 @@
 package ru.romanbrazhnikov.agilescraper;
 
+import io.reactivex.Scheduler;
+import io.reactivex.Single;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.HardcodedConfigFactory;
 import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.PrimitiveConfiguration;
 import ru.romanbrazhnikov.agilescraper.pagecount.PageCountProvider;
@@ -15,6 +20,7 @@ import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpSourceProvider;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -76,8 +82,9 @@ public class AgileScraper {
             // init Success consumer
             Consumer<ParseResult> onSuccessConsumer = new OnSuccessParseConsumerCSV(configuration.destinationName);
 
+            FinalBuffer<Boolean> isTerminated = new FinalBuffer<>(false);
             // walking through all pages
-            for (int i = configuration.firstPageNum; i <= maxPageValue; i += configuration.pageStep) {
+            for (int i = configuration.firstPageNum; (i <= maxPageValue) && !isTerminated.value; i += configuration.pageStep) {
 
                 // setting params for source provider
                 mySourceProvider.setQueryParamString(currentParamString.replace(HardcodedConfigFactory.PARAM_PAGE, String.valueOf(i)));
@@ -94,14 +101,23 @@ public class AgileScraper {
 
                     // parsing
                     firstLevelParser.parse()
+                            .timeout(2000, MILLISECONDS)
                             // adding markers and arguments
                             .map(parseResult -> addMarkersAndArguments(configuration, currentArgString, parseResult))
                             // getting second level if necessary
                             .map(parseResult -> getSecondLevel(configuration, secondLevelParser, secondLevelProvider, parseResult))
-                            // consuming the result
-                            .subscribe(onSuccessConsumer, Throwable::printStackTrace);
-                });
+                            .subscribe(onSuccessConsumer,throwable -> {
+                                if(throwable instanceof TimeoutException){
+                                    System.out.println("First level parsing TIME OUT ERROR");
+                                    throwable.printStackTrace();
+                                    isTerminated.value = true;
+                                }
+                            }).dispose();
 
+                }).dispose();
+                if(isTerminated.value){
+                    return;
+                }
                 // being on the last page - try to refresh the max page value
                 if(i == maxPageValue){
                     //  PAGE COUNT
@@ -134,7 +150,7 @@ public class AgileScraper {
                     // TODO: catch errors
                     maxPageFinal.value = firstPageNum;
                 }
-        );
+        ).dispose();
         maxPageValue = maxPageFinal.value;
         System.out.println("Page count: " + maxPageValue);
         return maxPageValue;
@@ -151,7 +167,8 @@ public class AgileScraper {
             for (Map<String, String> curRow : parseResult.getResult()) {
                 secondLevelURL = curRow.get(configuration.secondLevelName);
                 secondLevelProvider.setBaseUrl(configuration.secondLevelBaseUrl + secondLevelURL);
-
+                //delay
+                delayForAWhile(configuration);
                 // requesting second level
                 secondLevelProvider.requestSource()
                         .subscribe(secondLevelSource -> {
@@ -165,8 +182,8 @@ public class AgileScraper {
                                                 curRow.put(curName, SL_curRow.get(curName));
                                             }
                                         }
-                                    });
-                        });
+                                    }).dispose();
+                        }).dispose();
             }
         }
         return parseResult;
