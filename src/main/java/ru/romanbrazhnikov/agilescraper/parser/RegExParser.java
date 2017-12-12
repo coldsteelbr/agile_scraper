@@ -76,8 +76,6 @@ public class RegExParser implements ICommonParser {
                     e.printStackTrace();
                     executorService.shutdownNow();
                     futureValue.cancel(true);
-                    executorService.shutdownNow();
-                    futureValue.cancel(true);
                     emitter.onError(e);
                     break;
                 } finally {

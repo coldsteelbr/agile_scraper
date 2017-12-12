@@ -6,11 +6,19 @@ import ru.romanbrazhnikov.agilescraper.sourceprovider.cookies.Cookie;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class HttpSourceProvider {
+
+    // PROXY
+
+    private final String PROXY_ADDRESS = "";
+    private final int PROXY_PORTS = 8888;
+
     // TODO: Add encoding conversion
     // TODO: from server: ByteBuffer byteBuffer = Charset.forName("UTF-8").encode(myString)
     private String mBaseUrl = "";
@@ -44,6 +52,11 @@ public class HttpSourceProvider {
     public Single<String> requestSource() {
         return Single.create(emitter -> {
             try {
+                // Proxy
+                Proxy proxy = null;
+                if(!PROXY_ADDRESS.isEmpty()) {
+                     proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(PROXY_ADDRESS, PROXY_PORTS));
+                }
                 // opening connection
                 URL myURL = null;// = new URL(mBaseUrl);
                 HttpURLConnection httpConnection = null;// = (HttpURLConnection) myURL.openConnection();
@@ -54,7 +67,12 @@ public class HttpSourceProvider {
 
                     case GET:
                         myURL = new URL(mBaseUrl + (mQueryParamString != null ? "?" + mQueryParamString : ""));
-                        httpConnection = (HttpURLConnection) myURL.openConnection();
+                        // USE PROXY OR NOT
+                        if(proxy != null){
+                            httpConnection = (HttpURLConnection) myURL.openConnection(proxy);
+                        }else{
+                            httpConnection = (HttpURLConnection) myURL.openConnection();
+                        }
                         addHeadersIfAny(httpConnection);
                         addCookiesIfAny(httpConnection);
                         break;
@@ -62,7 +80,12 @@ public class HttpSourceProvider {
                         myURL = new URL(mBaseUrl);
                         byte[] postData = mQueryParamString.getBytes(StandardCharsets.UTF_8);
 
-                        httpConnection = (HttpURLConnection) myURL.openConnection();
+                        // USE PROXY OR NOT
+                        if(proxy != null){
+                            httpConnection = (HttpURLConnection) myURL.openConnection(proxy);
+                        }else{
+                            httpConnection = (HttpURLConnection) myURL.openConnection();
+                        }
                         httpConnection.setRequestProperty("User-Agent", "");
                         httpConnection.setRequestProperty("Accept", "application/json, text/plain, */*");
                         httpConnection.setInstanceFollowRedirects(false);

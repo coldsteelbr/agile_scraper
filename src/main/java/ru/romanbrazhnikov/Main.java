@@ -20,7 +20,7 @@ public class Main {
         //PrimitiveConfiguration configuration = configFactory.getUpWorkDataScrapingJobs();
 
         PrimitiveConfigBuilder builder = new PrimitiveConfigBuilder();
-        builder.readFromXmlFile(SPRAN_FLATS_TEST);
+        builder.readFromXmlFile(SPRAN_FLATS);
         PrimitiveConfiguration configuration = builder.init();
         //System.out.println(configuration.getDebugInfo());
 
