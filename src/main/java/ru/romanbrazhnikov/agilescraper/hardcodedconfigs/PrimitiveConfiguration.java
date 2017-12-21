@@ -1,11 +1,11 @@
 package ru.romanbrazhnikov.agilescraper.hardcodedconfigs;
 
+import ru.romanbrazhnikov.agilescraper.requestarguments.Argument;
 import ru.romanbrazhnikov.agilescraper.requestarguments.RequestArguments;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.cookies.Cookies;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class PrimitiveConfiguration {
     public static final String PAGE_NUM_NAME = "PAGENUM";
@@ -29,10 +29,10 @@ public class PrimitiveConfiguration {
     public int pageStep = 1;
     public String maxPagePattern = "page\\s*=\\s*(?<" + PAGE_NUM_NAME + ">[0-9]+?)\">\\s*[0-9]+\\s*<";
 
-    // markers
+    // markers: field|value pairs
     public Map<String, String> markers = new HashMap<>();
 
-    // headers
+    // http headers
     public Map<String, String> headers;
 
     // cookies
@@ -86,5 +86,28 @@ public class PrimitiveConfiguration {
         this.secondLevelBaseUrl = secondLevelBaseUrl;
         this.sourceEcoding = encoding;
         this.delayInMillis = delayInMillis;
+    }
+
+    public Set<String> getFields() {
+        // init
+        Set<String> fields = new HashSet<>();
+
+        // adding 1st level bindings
+        fields.addAll(firstLevelBindings.values());
+
+        // adding 2nd level bindings
+        if(secondLevelBindings != null) {
+            fields.addAll(secondLevelBindings.values());
+        }
+
+        // adding markers
+        fields.addAll(markers.keySet());
+
+        // adding arguments
+        for(Argument currentArg : requestArguments.mArgumentList){
+            fields.add(currentArg.field);
+        }
+
+        return fields;
     }
 }

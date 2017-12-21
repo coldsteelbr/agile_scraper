@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Set;
 
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
@@ -27,6 +28,11 @@ public class TextFileSaver implements ICommonSaver {
         Path file = Paths.get(mFileName);
         Files.write(file, stringToSave.getBytes(), CREATE, APPEND);
         System.out.println("stringToSave: \n" + stringToSave);
+
+    }
+
+    @Override
+    public void setFields(Set<String> fields) {
 
     }
 

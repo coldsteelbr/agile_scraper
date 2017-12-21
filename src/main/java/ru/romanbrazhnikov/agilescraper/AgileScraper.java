@@ -1,11 +1,6 @@
 package ru.romanbrazhnikov.agilescraper;
 
-import io.reactivex.Scheduler;
-import io.reactivex.Single;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
-import io.reactivex.schedulers.Schedulers;
 import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.HardcodedConfigFactory;
 import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.PrimitiveConfiguration;
 import ru.romanbrazhnikov.agilescraper.pagecount.PageCountProvider;
@@ -13,7 +8,9 @@ import ru.romanbrazhnikov.agilescraper.paramstringgenerator.ArgumentedParamStrin
 import ru.romanbrazhnikov.agilescraper.parser.ICommonParser;
 import ru.romanbrazhnikov.agilescraper.parser.ParseResult;
 import ru.romanbrazhnikov.agilescraper.parser.RegExParser;
-import ru.romanbrazhnikov.agilescraper.resultsaver.OnSuccessParseConsumerCSV;
+import ru.romanbrazhnikov.agilescraper.resultsaver.CsvAdvancedSaver;
+import ru.romanbrazhnikov.agilescraper.resultsaver.ICommonSaver;
+import ru.romanbrazhnikov.agilescraper.resultsaver.OnSuccessParseConsumer;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpSourceProvider;
 
@@ -45,7 +42,7 @@ public class AgileScraper {
 
         // init SECOND level parser
         ICommonParser secondLevelParser = new RegExParser();
-        if(configuration.secondLevelPattern != null) {
+        if (configuration.secondLevelPattern != null) {
             secondLevelParser.setPattern(configuration.secondLevelPattern);
             secondLevelParser.setMatchNames(configuration.secondLevelBindings.keySet());
             secondLevelParser.setBindings(configuration.secondLevelBindings);
@@ -60,6 +57,14 @@ public class AgileScraper {
 
         // init second level provider
         HttpSourceProvider secondLevelProvider = new HttpSourceProvider();
+
+        // init CSV saver
+        ICommonSaver csvSaver = new CsvAdvancedSaver(configuration.destinationName);
+        csvSaver.setFields(configuration.getFields());
+
+        // init Success consumer
+        Consumer<ParseResult> onSuccessConsumer
+                = new OnSuccessParseConsumer(csvSaver);
 
         //
         // PARSING AND SAVING
@@ -79,8 +84,7 @@ public class AgileScraper {
             // READING ALL PAGES
             //
 
-            // init Success consumer
-            Consumer<ParseResult> onSuccessConsumer = new OnSuccessParseConsumerCSV(configuration.destinationName);
+
 
             FinalBuffer<Boolean> isTerminated = new FinalBuffer<>(false);
             // walking through all pages
@@ -106,8 +110,8 @@ public class AgileScraper {
                             .map(parseResult -> addMarkersAndArguments(configuration, currentArgString, parseResult))
                             // getting second level if necessary
                             .map(parseResult -> getSecondLevel(configuration, secondLevelParser, secondLevelProvider, parseResult))
-                            .subscribe(onSuccessConsumer,throwable -> {
-                                if(throwable instanceof TimeoutException){
+                            .subscribe(onSuccessConsumer, throwable -> {
+                                if (throwable instanceof TimeoutException) {
                                     System.out.println("First level parsing TIME OUT ERROR");
                                     throwable.printStackTrace();
                                     isTerminated.value = true;
@@ -115,11 +119,11 @@ public class AgileScraper {
                             }).dispose();
 
                 }).dispose();
-                if(isTerminated.value){
+                if (isTerminated.value) {
                     return;
                 }
                 // being on the last page - try to refresh the max page value
-                if(i == maxPageValue){
+                if (i == maxPageValue) {
                     //  PAGE COUNT
                     maxPageValue = getMaxPageValue(finalSource.value, configuration.firstPageNum, pageCountParser);
                 }

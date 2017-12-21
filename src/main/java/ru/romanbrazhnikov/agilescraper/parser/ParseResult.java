@@ -4,7 +4,8 @@ import java.util.*;
 
 public class ParseResult {
 
-    private List<Map<String, String>> mResult = new ArrayList<>();
+    // list of rows "field/value"
+    private List<Map<String, String>> mResult = new LinkedList<>();
 
     public List<Map<String, String>> getResult() {
         return mResult;

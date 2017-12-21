@@ -5,8 +5,14 @@ import ru.romanbrazhnikov.agilescraper.parser.ParseResult;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class DummySaver implements ICommonSaver {
+    @Override
+    public void setFields(Set<String> fields) {
+
+    }
+
     @Override
     public Completable save(final ParseResult parseResult) {
         return Completable.create(emitter -> {
