@@ -1,0 +1,17 @@
+<component name="ArtifactManager">
+  <artifact name="Agile Scraper:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Agile_Scraper_jar</output-path>
+    <root id="root">
+      <element id="archive" name="Agile Scraper.jar">
+        <element id="module-output" name="Agile_Scraper_main" />
+        <element id="directory" name="META-INF">
+          <element id="file-copy" path="$PROJECT_DIR$/src/main/java/META-INF/MANIFEST.MF" />
+        </element>
+      </element>
+      <element id="library" level="project" name="Gradle: org.reactivestreams:reactive-streams:1.0.1" />
+      <element id="library" level="project" name="Gradle: io.reactivex.rxjava2:rxjava:2.1.6" />
+      <element id="file-copy" path="$PROJECT_DIR$/conf_spran_comm_sale.prs" />
+      <element id="file-copy" path="$PROJECT_DIR$/conf_spran_flat_sale.prs" />
+    </root>
+  </artifact>
+</component>
