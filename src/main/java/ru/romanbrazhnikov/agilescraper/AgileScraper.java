@@ -10,10 +10,14 @@ import ru.romanbrazhnikov.agilescraper.parser.ParseResult;
 import ru.romanbrazhnikov.agilescraper.parser.RegExParser;
 import ru.romanbrazhnikov.agilescraper.resultsaver.CsvAdvancedSaver;
 import ru.romanbrazhnikov.agilescraper.resultsaver.ICommonSaver;
+import ru.romanbrazhnikov.agilescraper.resultsaver.MySQLSaver;
 import ru.romanbrazhnikov.agilescraper.resultsaver.OnSuccessParseConsumer;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpSourceProvider;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -23,6 +27,11 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class AgileScraper {
 
+    private static final String DB_NAME = "db_archive_service";
+    private static final String DB_ROOT_USER = "root";
+    private static final String DB_USER = DB_ROOT_USER;
+    private static final String DB_PASSWORD = "123";
+    private static final String DB_URL = "jdbc:mysql://localhost/"+ DB_NAME +"?useSSL=false";
 
     public void run(PrimitiveConfiguration configuration) {
 
@@ -62,9 +71,22 @@ public class AgileScraper {
         ICommonSaver csvSaver = new CsvAdvancedSaver(configuration.destinationName);
         csvSaver.setFields(configuration.getFields());
 
+        // init MySQL saver
+        Connection connection = null;
+        try {
+            connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        ICommonSaver mysqlSaver = new MySQLSaver(configuration.destinationName, connection);
+        mysqlSaver.setFields(configuration.getFields());
+
+
+        ICommonSaver ACTUAL_SAVER = mysqlSaver;
+
         // init Success consumer
         Consumer<ParseResult> onSuccessConsumer
-                = new OnSuccessParseConsumer(csvSaver);
+                = new OnSuccessParseConsumer(ACTUAL_SAVER);
 
         //
         // PARSING AND SAVING

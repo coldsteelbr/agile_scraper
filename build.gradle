@@ -15,4 +15,7 @@ dependencies {
     // RxJava 2
     compile "io.reactivex.rxjava2:rxjava:2.1.6"
 
+    // Hibernate
+    
+
 }
