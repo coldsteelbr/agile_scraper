@@ -31,7 +31,7 @@ public class AgileScraper {
     private static final String DB_ROOT_USER = "root";
     private static final String DB_USER = DB_ROOT_USER;
     private static final String DB_PASSWORD = "123";
-    private static final String DB_URL = "jdbc:mysql://localhost/"+ DB_NAME +"?useSSL=false";
+    private static final String DB_URL = "jdbc:mysql://localhost/"+ DB_NAME +"?useSSL=false&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC";
 
     public void run(PrimitiveConfiguration configuration) {
 
@@ -71,6 +71,7 @@ public class AgileScraper {
         ICommonSaver csvSaver = new CsvAdvancedSaver(configuration.destinationName);
         csvSaver.setFields(configuration.getFields());
 
+/*
         // init MySQL saver
         Connection connection = null;
         try {
@@ -78,11 +79,12 @@ public class AgileScraper {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
         ICommonSaver mysqlSaver = new MySQLSaver(configuration.destinationName, connection);
         mysqlSaver.setFields(configuration.getFields());
-
-
-        ICommonSaver ACTUAL_SAVER = mysqlSaver;
+*/
+        // TODO: ACTUAL SAVER
+        ICommonSaver ACTUAL_SAVER = csvSaver;
 
         // init Success consumer
         Consumer<ParseResult> onSuccessConsumer
@@ -105,10 +107,8 @@ public class AgileScraper {
             //
             // READING ALL PAGES
             //
-
-
-
             FinalBuffer<Boolean> isTerminated = new FinalBuffer<>(false);
+
             // walking through all pages
             for (int i = configuration.firstPageNum; (i <= maxPageValue) && !isTerminated.value; i += configuration.pageStep) {
 
@@ -131,7 +131,14 @@ public class AgileScraper {
                             // adding markers and arguments
                             .map(parseResult -> addMarkersAndArguments(configuration, currentArgString, parseResult))
                             // getting second level if necessary
-                            .map(parseResult -> getSecondLevel(configuration, secondLevelParser, secondLevelProvider, parseResult))
+                            .map((ParseResult parseResult) -> {
+                                // if no second level set
+                                if(configuration.secondLevelName.equals("")){
+                                    return parseResult;
+                                }
+                                // get second level
+                                return getSecondLevel(configuration, secondLevelParser, secondLevelProvider, parseResult);
+                            })
                             .subscribe(onSuccessConsumer, throwable -> {
                                 if (throwable instanceof TimeoutException) {
                                     System.out.println("First level parsing TIME OUT ERROR");
@@ -240,6 +247,7 @@ public class AgileScraper {
         //
         HttpSourceProvider mySourceProvider = new HttpSourceProvider();
         mySourceProvider.setBaseUrl(configuration.baseUrl);
+        mySourceProvider.setUrlDelimiter(configuration.urlDelimiter);
         mySourceProvider.setClientCharset(configuration.sourceEcoding);
         mySourceProvider.setHttpMethod(configuration.method);
         // ... cookies

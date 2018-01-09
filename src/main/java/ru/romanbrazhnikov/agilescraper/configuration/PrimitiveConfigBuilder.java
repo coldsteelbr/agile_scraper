@@ -126,7 +126,7 @@ public class PrimitiveConfigBuilder {
         initCookies();
         initDataFieldBinding(firstLevel);
         // adding second level name to bindings
-        if(mConfiguration.secondLevelName != null){
+        if(mConfiguration.secondLevelName != null && !mConfiguration.secondLevelName.isEmpty()){
             mConfiguration.firstLevelBindings.put(mConfiguration.secondLevelName, mConfiguration.secondLevelName);
         }
         initDataFieldBinding(secondLevel);
@@ -148,7 +148,7 @@ public class PrimitiveConfigBuilder {
         String destination = getParserAttributeAsString(XPATH_DESTINATION);
         String firstLevelPattern = getByXPath(XPATH_FIRST_LEVEL_PATTERN).trim();
         String secondLevelPattern = getByXPath(XPATH_SECOND_LEVEL_PATTERN).trim();
-        String secondLevelName = PrimitiveConfiguration.SECOND_LEVEL_NAME;
+        String secondLevelName = !secondLevelPattern.equals("")? PrimitiveConfiguration.SECOND_LEVEL_NAME : "";
         String secondLevelBaseUrl = getParserAttributeAsString(XPATH_SECOND_LEVEL_BASE_URL);
 
         HttpMethods httpMethod = HttpMethods.GET;

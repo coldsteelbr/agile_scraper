@@ -11,6 +11,7 @@ public class Main {
     private static final String SPRAN_FLATS = "conf_spran_flat_sale.prs";
     private static final String SPRAN_COMM_SALE = "conf_spran_comm_sale.prs";
     private static final String SPRAN_FLATS_TEST = "conf_spran_flat_sale_test.prs";
+    private static final String NOMER_JANNA = "conf_nomer_janna.prs";
 
     public static void main(String[] args){
         AgileScraper scraper = new AgileScraper();

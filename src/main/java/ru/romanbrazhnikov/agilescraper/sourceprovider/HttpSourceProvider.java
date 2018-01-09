@@ -22,6 +22,7 @@ public class HttpSourceProvider {
     // TODO: Add encoding conversion
     // TODO: from server: ByteBuffer byteBuffer = Charset.forName("UTF-8").encode(myString)
     private String mBaseUrl = "";
+    private String mUrlDelimiter = "";
 
     private List<String> mCookiesToRequest;
     private List<String> mCookiesFromResponse;
@@ -35,6 +36,10 @@ public class HttpSourceProvider {
 
     public void setBaseUrl(String baseUrl) {
         mBaseUrl = baseUrl;
+    }
+
+    public void setUrlDelimiter(String urlDelimiter) {
+        mUrlDelimiter = urlDelimiter;
     }
 
     public void setClientCharset(String clientCharset) {
@@ -66,7 +71,7 @@ public class HttpSourceProvider {
                 switch (mHttpMethod) {
 
                     case GET:
-                        myURL = new URL(mBaseUrl + (mQueryParamString != null ? "?" + mQueryParamString : ""));
+                        myURL = new URL(mBaseUrl + (mQueryParamString != null ? mUrlDelimiter + mQueryParamString : ""));
                         // USE PROXY OR NOT
                         if(proxy != null){
                             httpConnection = (HttpURLConnection) myURL.openConnection(proxy);

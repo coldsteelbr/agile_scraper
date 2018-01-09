@@ -1,4 +1,4 @@
 Manifest-Version: 1.0
-Class-Path: reactive-streams-1.0.1.jar rxjava-2.1.6.jar
+Class-Path: reactive-streams-1.0.1.jar rxjava-2.1.6.jar mysql-connector-java-6.0.6.jar
 Main-Class: ru.romanbrazhnikov.Main
 
