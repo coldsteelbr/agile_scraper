@@ -13,6 +13,7 @@
       <element id="file-copy" path="$PROJECT_DIR$/conf_spran_comm_sale.prs" />
       <element id="file-copy" path="$PROJECT_DIR$/conf_spran_flat_sale.prs" />
       <element id="library" level="project" name="mysql:mysql-connector-java:6.0.6" />
+      <element id="file-copy" path="$PROJECT_DIR$/login.txt" />
     </root>
   </artifact>
 </component>

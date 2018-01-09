@@ -14,7 +14,9 @@ import ru.romanbrazhnikov.agilescraper.resultsaver.MySQLSaver;
 import ru.romanbrazhnikov.agilescraper.resultsaver.OnSuccessParseConsumer;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpSourceProvider;
+import ru.romanbrazhnikov.agilescraper.utils.FileUtils;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -27,15 +29,37 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class AgileScraper {
 
+    enum Savers{
+        CSV,
+        MYSQL
+    }
+    private Savers SaverType = Savers.MYSQL;
+
+    private static final String LOGIN_FILE_NAME = "login.txt";
     private static final String DB_NAME = "db_archive_service";
-    private static final String DB_ROOT_USER = "root";
-    private static final String DB_USER = DB_ROOT_USER;
-    private static final String DB_PASSWORD = "123";
+    private String DB_USER = "";
+    private String DB_PASSWORD = "";
     private static final String DB_URL = "jdbc:mysql://localhost/"+ DB_NAME +"?useSSL=false&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC";
 
     public void run(PrimitiveConfiguration configuration) {
 
         System.out.println("Agile scraper ran");
+
+        // Reading passwords
+        String loginPassword = null;
+        try {
+            loginPassword = FileUtils.readFromFileToString(LOGIN_FILE_NAME);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if(loginPassword != null){
+            if(!loginPassword.isEmpty()){
+                String[] logPwd = loginPassword.split("\\s+");
+                DB_USER = logPwd[0];
+                DB_PASSWORD = logPwd[1];
+            }
+        }
 
         // TODO: make a builder
         HttpSourceProvider mySourceProvider = initHttpSourceProvider(configuration);
@@ -67,24 +91,31 @@ public class AgileScraper {
         // init second level provider
         HttpSourceProvider secondLevelProvider = new HttpSourceProvider();
 
-        // init CSV saver
-        ICommonSaver csvSaver = new CsvAdvancedSaver(configuration.destinationName);
-        csvSaver.setFields(configuration.getFields());
+        // ACTUAL SAVER
+        ICommonSaver ACTUAL_SAVER = null;
+        switch (SaverType){
+            case CSV:
+                // init CSV saver
+                ICommonSaver csvSaver = new CsvAdvancedSaver(configuration.destinationName);
+                csvSaver.setFields(configuration.getFields());
 
-/*
-        // init MySQL saver
-        Connection connection = null;
-        try {
-            connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-        } catch (SQLException e) {
-            e.printStackTrace();
+                ACTUAL_SAVER= csvSaver;
+                break;
+            case MYSQL:
+                // init MySQL saver
+                Connection connection = null;
+                try {
+                    connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+
+                ICommonSaver mysqlSaver = new MySQLSaver(configuration.destinationName, connection);
+                mysqlSaver.setFields(configuration.getFields());
+
+                ACTUAL_SAVER = mysqlSaver;
+                break;
         }
-
-        ICommonSaver mysqlSaver = new MySQLSaver(configuration.destinationName, connection);
-        mysqlSaver.setFields(configuration.getFields());
-*/
-        // TODO: ACTUAL SAVER
-        ICommonSaver ACTUAL_SAVER = csvSaver;
 
         // init Success consumer
         Consumer<ParseResult> onSuccessConsumer
@@ -198,7 +229,7 @@ public class AgileScraper {
             String secondLevelURL;
             // getting second level for each first level row
             for (Map<String, String> curRow : parseResult.getResult()) {
-                secondLevelURL = curRow.get(configuration.secondLevelName);
+                secondLevelURL = curRow.get(PrimitiveConfiguration.SECOND_LEVEL_FIELD);
                 secondLevelProvider.setBaseUrl(configuration.secondLevelBaseUrl + secondLevelURL);
                 //delay
                 delayForAWhile(configuration);

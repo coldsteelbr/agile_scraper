@@ -127,7 +127,8 @@ public class PrimitiveConfigBuilder {
         initDataFieldBinding(firstLevel);
         // adding second level name to bindings
         if(mConfiguration.secondLevelName != null && !mConfiguration.secondLevelName.isEmpty()){
-            mConfiguration.firstLevelBindings.put(mConfiguration.secondLevelName, mConfiguration.secondLevelName);
+            //mConfiguration.firstLevelBindings.put(PrimitiveConfiguration.SECOND_LEVEL_FIELD, mConfiguration.secondLevelName);
+            mConfiguration.firstLevelBindings.put(mConfiguration.secondLevelName, PrimitiveConfiguration.SECOND_LEVEL_FIELD);
         }
         initDataFieldBinding(secondLevel);
 

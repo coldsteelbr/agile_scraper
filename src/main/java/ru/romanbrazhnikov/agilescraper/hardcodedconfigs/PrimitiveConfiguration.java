@@ -10,6 +10,8 @@ import java.util.*;
 public class PrimitiveConfiguration {
     public static final String PAGE_NUM_NAME = "PAGENUM";
     public static final String SECOND_LEVEL_NAME = "SECONDLEVEL";
+    public static final String SECOND_LEVEL_FIELD = "sub_url";
+
     // config name
     public String configName;
 
