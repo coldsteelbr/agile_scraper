@@ -20,14 +20,14 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.TimeoutException;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class AgileScraper {
+    private  final SimpleDateFormat mDateFormat = new SimpleDateFormat("YYYY-MM-dd");
 
     enum Savers{
         CSV,
@@ -111,7 +111,11 @@ public class AgileScraper {
                 }
 
                 ICommonSaver mysqlSaver = new MySQLSaver(configuration.destinationName, connection);
-                mysqlSaver.setFields(configuration.getFields());
+                // TODO: refactor this Kostyl
+                Set<String> fieldsToSet = configuration.getFields();
+                fieldsToSet.add(PrimitiveConfiguration.FIELD_DATE);
+                fieldsToSet.add(PrimitiveConfiguration.FIELD_SOURCE_NAME);
+                mysqlSaver.setFields(fieldsToSet);
 
                 ACTUAL_SAVER = mysqlSaver;
                 break;
@@ -152,6 +156,10 @@ public class AgileScraper {
                 FinalBuffer<String> finalSource = new FinalBuffer<>();
                 // requesting source
                 mySourceProvider.requestSource().subscribe(source -> {
+                    // getting current date
+
+                    final String currentDateString = mDateFormat.format(Calendar.getInstance().getTime());
+
                     finalSource.value = source;
                     // setting parser
                     firstLevelParser.setSource(source);
@@ -161,6 +169,16 @@ public class AgileScraper {
                             .timeout(2000, MILLISECONDS)
                             // adding markers and arguments
                             .map(parseResult -> addMarkersAndArguments(configuration, currentArgString, parseResult))
+                            // adding source name and date
+                            .map(parseResult -> {
+
+                                for(Map<String, String> currentRow : parseResult.getResult()){
+                                    currentRow.put(PrimitiveConfiguration.FIELD_DATE, currentDateString);
+                                    currentRow.put(PrimitiveConfiguration.FIELD_SOURCE_NAME, configuration.configName);
+                                }
+
+                                return parseResult;
+                            })
                             // getting second level if necessary
                             .map((ParseResult parseResult) -> {
                                 // if no second level set
@@ -229,7 +247,7 @@ public class AgileScraper {
             String secondLevelURL;
             // getting second level for each first level row
             for (Map<String, String> curRow : parseResult.getResult()) {
-                secondLevelURL = curRow.get(PrimitiveConfiguration.SECOND_LEVEL_FIELD);
+                secondLevelURL = curRow.get(PrimitiveConfiguration.FIELD_SUB_URL);
                 secondLevelProvider.setBaseUrl(configuration.secondLevelBaseUrl + secondLevelURL);
                 //delay
                 delayForAWhile(configuration);
@@ -279,7 +297,7 @@ public class AgileScraper {
         HttpSourceProvider mySourceProvider = new HttpSourceProvider();
         mySourceProvider.setBaseUrl(configuration.baseUrl);
         mySourceProvider.setUrlDelimiter(configuration.urlDelimiter);
-        mySourceProvider.setClientCharset(configuration.sourceEcoding);
+        mySourceProvider.setClientCharset(configuration.sourceEncoding);
         mySourceProvider.setHttpMethod(configuration.method);
         // ... cookies
         if (configuration.cookies != null) {

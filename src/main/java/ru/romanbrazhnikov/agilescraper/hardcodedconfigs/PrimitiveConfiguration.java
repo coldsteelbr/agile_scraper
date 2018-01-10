@@ -10,7 +10,9 @@ import java.util.*;
 public class PrimitiveConfiguration {
     public static final String PAGE_NUM_NAME = "PAGENUM";
     public static final String SECOND_LEVEL_NAME = "SECONDLEVEL";
-    public static final String SECOND_LEVEL_FIELD = "sub_url";
+    public static final String FIELD_SUB_URL = "sub_url";
+    public static final String FIELD_DATE = "date";
+    public static final String FIELD_SOURCE_NAME = "source_name";
 
     // config name
     public String configName;
@@ -19,7 +21,7 @@ public class PrimitiveConfiguration {
     public long delayInMillis = 334;
     public String baseUrl;
     public String urlDelimiter = "";
-    public String sourceEcoding = "utf8";
+    public String sourceEncoding = "utf8";
     public HttpMethods method = HttpMethods.GET;
     // request params
     public String requestParams;
@@ -86,7 +88,7 @@ public class PrimitiveConfiguration {
         this.secondLevelPattern = secondLevelPattern;
         this.secondLevelName = secondLevelName;
         this.secondLevelBaseUrl = secondLevelBaseUrl;
-        this.sourceEcoding = encoding;
+        this.sourceEncoding = encoding;
         this.delayInMillis = delayInMillis;
     }
 
