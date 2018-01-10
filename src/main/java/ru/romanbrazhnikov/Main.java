@@ -14,8 +14,10 @@ public class Main {
     private static final String NOMER_JANNA = "conf_nomer_janna.prs";
 
     public static void main(String[] args){
+        String configFileName = args[0];
+
         AgileScraper scraper = new AgileScraper();
-        HardcodedConfigFactory configFactory = new HardcodedConfigFactory();
+        //HardcodedConfigFactory configFactory = new HardcodedConfigFactory();
         //PrimitiveConfiguration configuration = configFactory.getSpranCommSell();
         //PrimitiveConfiguration configuration = configFactory.getSpranFlatSell();
         //PrimitiveConfiguration configuration = configFactory.getProstoTomskCommSell();
@@ -23,7 +25,7 @@ public class Main {
         //PrimitiveConfiguration configuration = configFactory.getUpWorkDataScrapingJobs();
 
         PrimitiveConfigBuilder builder = new PrimitiveConfigBuilder();
-        String configToDownload = SPRAN_FLATS;
+        String configToDownload = configFileName;
         builder.readFromXmlFile(configToDownload);
         PrimitiveConfiguration configuration = builder.init();
         //System.out.println(configuration.getDebugInfo());

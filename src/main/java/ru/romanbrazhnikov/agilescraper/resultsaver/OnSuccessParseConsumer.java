@@ -4,8 +4,6 @@ import io.reactivex.annotations.NonNull;
 import io.reactivex.functions.Consumer;
 import ru.romanbrazhnikov.agilescraper.parser.ParseResult;
 
-import java.util.Set;
-
 public class OnSuccessParseConsumer implements Consumer<ParseResult> {
 
     @NonNull
@@ -21,6 +19,13 @@ public class OnSuccessParseConsumer implements Consumer<ParseResult> {
     public void accept(ParseResult parseResult) {
 
         // todo: free resources by complete
-        mSaver.save(parseResult).subscribe().dispose();
+        mSaver.save(parseResult)
+                .subscribe(() -> {
+                        }, throwable -> {
+                            System.out.println("OnSuccessParserConsumer saving error:");
+                            throwable.printStackTrace();
+                        }
+
+                ).dispose();
     }
 }

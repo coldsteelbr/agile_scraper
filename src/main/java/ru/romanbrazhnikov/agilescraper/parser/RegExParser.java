@@ -59,6 +59,7 @@ public class RegExParser implements ICommonParser {
             Future<Boolean> futureValue;
 
             String currentKeyToPut;
+            String valueToPut;
             while (true) {
                 // init future value for matcher
                 futureValue = executorService.submit(heavyMatcher);
@@ -97,10 +98,10 @@ public class RegExParser implements ICommonParser {
                         } else {
                             currentKeyToPut = currentName;
                         }
-
+                        valueToPut = m.group(currentName);
                         currentResultRow.put(
                                 currentKeyToPut,
-                                m.group(currentName));
+                                valueToPut==null?"":valueToPut);
                     } catch (Exception e) {
                         emitter.onError(
                                 new Exception(

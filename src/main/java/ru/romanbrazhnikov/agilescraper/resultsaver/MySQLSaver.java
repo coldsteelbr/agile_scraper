@@ -55,7 +55,9 @@ public class MySQLSaver implements ICommonSaver {
                 }
                 // setting
                 for (Map.Entry<String, String> curValue : currentRow.entrySet()) {
-                    insertStatement.setString(mFields.indexOf(curValue.getKey()) + 1, curValue.getValue());
+                    insertStatement.setString(
+                            mFields.indexOf(curValue.getKey()) + 1,
+                            curValue.getValue().replaceAll("\\s+", " "));
                 }
                 insertStatement.addBatch();
             }
