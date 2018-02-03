@@ -1,7 +1,7 @@
 package ru.romanbrazhnikov.agilescraper.resultsaver;
 
 import io.reactivex.Completable;
-import ru.romanbrazhnikov.agilescraper.parser.ParseResult;
+import ru.romanbrazhnikov.commonparsers.ParseResult;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

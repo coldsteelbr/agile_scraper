@@ -2,7 +2,7 @@ package ru.romanbrazhnikov.agilescraper.resultsaver;
 
 import io.reactivex.annotations.NonNull;
 import io.reactivex.functions.Consumer;
-import ru.romanbrazhnikov.agilescraper.parser.ParseResult;
+import ru.romanbrazhnikov.commonparsers.ParseResult;
 
 public class OnSuccessParseConsumer implements Consumer<ParseResult> {
 

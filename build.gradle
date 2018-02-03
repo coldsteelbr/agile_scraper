@@ -15,7 +15,8 @@ dependencies {
     // RxJava 2
     compile "io.reactivex.rxjava2:rxjava:2.1.6"
 
-    // Hibernate
-    
+    // MySQL Connector https://mvnrepository.com/artifact/mysql/mysql-connector-java
+    compile group: 'mysql', name: 'mysql-connector-java', version: '6.0.6'
+
 
 }

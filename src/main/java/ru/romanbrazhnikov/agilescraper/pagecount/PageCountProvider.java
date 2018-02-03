@@ -3,7 +3,7 @@ package ru.romanbrazhnikov.agilescraper.pagecount;
 import io.reactivex.Single;
 import ru.romanbrazhnikov.agilescraper.FinalBuffer;
 import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.PrimitiveConfiguration;
-import ru.romanbrazhnikov.agilescraper.parser.ICommonParser;
+import ru.romanbrazhnikov.commonparsers.ICommonParser;
 
 import java.util.Map;
 
