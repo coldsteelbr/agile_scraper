@@ -2,8 +2,7 @@ package ru.romanbrazhnikov;
 
 import ru.romanbrazhnikov.agilescraper.AgileScraper;
 import ru.romanbrazhnikov.agilescraper.configuration.PrimitiveConfigBuilder;
-import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.HardcodedConfigFactory;
-import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.PrimitiveConfiguration;
+import ru.romanbrazhnikov.agilescraper.configuration.PrimitiveConfiguration;
 
 
 

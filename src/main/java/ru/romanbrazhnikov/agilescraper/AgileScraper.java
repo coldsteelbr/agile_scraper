@@ -2,7 +2,7 @@ package ru.romanbrazhnikov.agilescraper;
 
 import io.reactivex.functions.Consumer;
 import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.HardcodedConfigFactory;
-import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.PrimitiveConfiguration;
+import ru.romanbrazhnikov.agilescraper.configuration.PrimitiveConfiguration;
 import ru.romanbrazhnikov.agilescraper.pagecount.PageCountProvider;
 import ru.romanbrazhnikov.agilescraper.paramstringgenerator.ArgumentedParamString;
 import ru.romanbrazhnikov.commonparsers.ICommonParser;

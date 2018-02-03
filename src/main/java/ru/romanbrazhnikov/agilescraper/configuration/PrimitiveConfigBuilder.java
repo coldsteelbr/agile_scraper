@@ -5,7 +5,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.PrimitiveConfiguration;
 import ru.romanbrazhnikov.agilescraper.requestarguments.Argument;
 import ru.romanbrazhnikov.agilescraper.requestarguments.RequestArguments;
 import ru.romanbrazhnikov.agilescraper.requestarguments.Values;

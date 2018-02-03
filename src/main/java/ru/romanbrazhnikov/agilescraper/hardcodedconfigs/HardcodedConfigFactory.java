@@ -1,5 +1,6 @@
 package ru.romanbrazhnikov.agilescraper.hardcodedconfigs;
 
+import ru.romanbrazhnikov.agilescraper.configuration.PrimitiveConfiguration;
 import ru.romanbrazhnikov.agilescraper.requestarguments.Argument;
 import ru.romanbrazhnikov.agilescraper.requestarguments.Values;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;

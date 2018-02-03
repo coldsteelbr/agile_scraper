@@ -1,4 +1,4 @@
-package ru.romanbrazhnikov.agilescraper.hardcodedconfigs;
+package ru.romanbrazhnikov.agilescraper.configuration;
 
 import ru.romanbrazhnikov.agilescraper.requestarguments.Argument;
 import ru.romanbrazhnikov.agilescraper.requestarguments.RequestArguments;
