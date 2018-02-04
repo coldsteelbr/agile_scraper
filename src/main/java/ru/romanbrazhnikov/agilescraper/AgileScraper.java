@@ -1,13 +1,10 @@
 package ru.romanbrazhnikov.agilescraper;
 
 import io.reactivex.functions.Consumer;
-import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.HardcodedConfigFactory;
 import ru.romanbrazhnikov.agilescraper.configuration.PrimitiveConfiguration;
+import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.HardcodedConfigFactory;
 import ru.romanbrazhnikov.agilescraper.pagecount.PageCountProvider;
 import ru.romanbrazhnikov.agilescraper.paramstringgenerator.ArgumentedParamString;
-import ru.romanbrazhnikov.commonparsers.ICommonParser;
-import ru.romanbrazhnikov.commonparsers.ParseResult;
-import ru.romanbrazhnikov.commonparsers.RegExParser;
 import ru.romanbrazhnikov.agilescraper.resultsaver.CsvAdvancedSaver;
 import ru.romanbrazhnikov.agilescraper.resultsaver.ICommonSaver;
 import ru.romanbrazhnikov.agilescraper.resultsaver.MySQLSaver;
@@ -15,31 +12,39 @@ import ru.romanbrazhnikov.agilescraper.resultsaver.OnSuccessParseConsumer;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpSourceProvider;
 import ru.romanbrazhnikov.agilescraper.utils.FileUtils;
+import ru.romanbrazhnikov.commonparsers.ICommonParser;
+import ru.romanbrazhnikov.commonparsers.ParseResult;
+import ru.romanbrazhnikov.commonparsers.RegExParser;
+import ru.romanbrazhnikov.commonparsers.XPathParser;
 
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Calendar;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class AgileScraper {
-    private  final SimpleDateFormat mDateFormat = new SimpleDateFormat("YYYY-MM-dd");
+    private final SimpleDateFormat mDateFormat = new SimpleDateFormat("YYYY-MM-dd");
 
-    enum Savers{
+    enum Savers {
         CSV,
         MYSQL
     }
+
     private Savers SaverType = Savers.MYSQL;
 
     private static final String LOGIN_FILE_NAME = "login.txt";
     private static final String DB_NAME = "db_archive_service";
     private String DB_USER = "";
     private String DB_PASSWORD = "";
-    private static final String DB_URL = "jdbc:mysql://localhost/"+ DB_NAME +"?useSSL=false&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC";
+    private static final String DB_URL = "jdbc:mysql://localhost/" + DB_NAME + "?useSSL=false&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC";
 
     public void run(PrimitiveConfiguration configuration) {
 
@@ -53,8 +58,8 @@ public class AgileScraper {
             e.printStackTrace();
         }
 
-        if(loginPassword != null){
-            if(!loginPassword.isEmpty()){
+        if (loginPassword != null) {
+            if (!loginPassword.isEmpty()) {
                 String[] logPwd = loginPassword.split("\\s+");
                 DB_USER = logPwd[0];
                 DB_PASSWORD = logPwd[1];
@@ -68,13 +73,32 @@ public class AgileScraper {
 
         // init FIRST level parser
         // TODO: invert dependency or build
-        ICommonParser firstLevelParser = new RegExParser();
+        ICommonParser firstLevelParser;
+        switch (configuration.firstLevelParserType) {
+            default:
+            case REGEX:
+                firstLevelParser = new RegExParser();
+                break;
+            case XPATH:
+                firstLevelParser = new XPathParser();
+                break;
+        }
         firstLevelParser.setMatchNames(configuration.firstLevelBindings.keySet());
         firstLevelParser.setBindings(configuration.firstLevelBindings);
         firstLevelParser.setPattern(configuration.firstLevelPattern);
 
         // init SECOND level parser
-        ICommonParser secondLevelParser = new RegExParser();
+        ICommonParser secondLevelParser;
+        switch (configuration.secondLevelParserType) {
+            default:
+            case REGEX:
+                secondLevelParser = new RegExParser();
+                break;
+            case XPATH:
+                secondLevelParser = new XPathParser();
+                break;
+
+        }
         if (configuration.secondLevelPattern != null) {
             secondLevelParser.setPattern(configuration.secondLevelPattern);
             secondLevelParser.setMatchNames(configuration.secondLevelBindings.keySet());
@@ -93,13 +117,13 @@ public class AgileScraper {
 
         // ACTUAL SAVER
         ICommonSaver ACTUAL_SAVER = null;
-        switch (SaverType){
+        switch (SaverType) {
             case CSV:
                 // init CSV saver
                 ICommonSaver csvSaver = new CsvAdvancedSaver(configuration.destinationName);
                 csvSaver.setFields(configuration.getFields());
 
-                ACTUAL_SAVER= csvSaver;
+                ACTUAL_SAVER = csvSaver;
                 break;
             case MYSQL:
                 // init MySQL saver
@@ -172,7 +196,7 @@ public class AgileScraper {
                             // adding source name and date
                             .map(parseResult -> {
 
-                                for(Map<String, String> currentRow : parseResult.getResult()){
+                                for (Map<String, String> currentRow : parseResult.getResult()) {
                                     currentRow.put(PrimitiveConfiguration.FIELD_DATE, currentDateString);
                                     currentRow.put(PrimitiveConfiguration.FIELD_SOURCE_NAME, configuration.configName);
                                 }
@@ -182,7 +206,7 @@ public class AgileScraper {
                             // getting second level if necessary
                             .map((ParseResult parseResult) -> {
                                 // if no second level set
-                                if(configuration.secondLevelName.equals("")){
+                                if (configuration.secondLevelName.equals("")) {
                                     return parseResult;
                                 }
                                 // get second level

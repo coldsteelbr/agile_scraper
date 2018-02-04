@@ -18,5 +18,9 @@ dependencies {
     // MySQL Connector https://mvnrepository.com/artifact/mysql/mysql-connector-java
     compile group: 'mysql', name: 'mysql-connector-java', version: '6.0.6'
 
+    // HtmlCleaner
+    compile group: 'net.sourceforge.htmlcleaner', name: 'htmlcleaner', version: '2.6'
 
+    // GSON
+    compile 'com.google.code.gson:gson:2.8.2'
 }

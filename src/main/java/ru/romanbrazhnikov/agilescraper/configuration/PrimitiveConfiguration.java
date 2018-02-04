@@ -14,6 +14,11 @@ public class PrimitiveConfiguration {
     public static final String FIELD_DATE = "date";
     public static final String FIELD_SOURCE_NAME = "source_name";
 
+    public enum Parsers{
+        REGEX,
+        XPATH
+    }
+
     // config name
     public String configName;
 
@@ -52,6 +57,11 @@ public class PrimitiveConfiguration {
     // second level specifics
     public String secondLevelName = null;
     public String secondLevelBaseUrl;
+
+    // parser types
+    public Parsers firstLevelParserType = Parsers.REGEX;
+    public Parsers secondLevelParserType = Parsers.REGEX;
+
 
     // level bindings (aliases)
     public Map<String, String> firstLevelBindings;

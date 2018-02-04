@@ -46,6 +46,7 @@ public class PrimitiveConfigBuilder {
     private static final String XPATH_BASE_URL = "/Config/BaseUrl/@value";
     private static final String XPATH_BASE_URL_DELIMITER = "/Config/BaseUrl/@delimiter";
     private static final String XPATH_REQUEST_PARAMS = "/Config/RequestParams/@value";
+    private static final String XPATH_REQUEST_PARAMS_BODY = "/Config/RequestParams";
     private static final String XPATH_REQUEST_ARGUMENTS = "/Config/RequestArguments/Argument";
     private static final String XPATH_METHOD = "/Config/Method/@value";
     private static final String XPATH_ENCODING = "/Config/Encoding/@value";
@@ -62,6 +63,10 @@ public class PrimitiveConfigBuilder {
     private static final String XPATH_FIRST_LEVEL_BINDINGS = "/Config/FirstLevelBindings/Binding";
     private static final String XPATH_SECOND_LEVEL_BINDINGS = "/Config/SecondLevelBindings/Binding";
     private static final String XPATH_SECOND_LEVEL_BASE_URL = "/Config/SecondLevelBaseUrl/@value";
+    private static final String XPATH_FIRST_LEVEL_PARSER_TYPE = "/Config/FirstLevelPattern/@parser";
+    private static final String XPATH_SECOND_LEVEL_PARSER_TYPE = "/Config/SecondLevelPattern/@parser";
+
+
     //
     // System fields
     //
@@ -125,7 +130,7 @@ public class PrimitiveConfigBuilder {
         initCookies();
         initDataFieldBinding(firstLevel);
         // adding second level name to bindings
-        if(mConfiguration.secondLevelName != null && !mConfiguration.secondLevelName.isEmpty()){
+        if (mConfiguration.secondLevelName != null && !mConfiguration.secondLevelName.isEmpty()) {
             mConfiguration.firstLevelBindings.put(mConfiguration.secondLevelName, PrimitiveConfiguration.FIELD_SUB_URL);
         }
         initDataFieldBinding(secondLevel);
@@ -138,6 +143,9 @@ public class PrimitiveConfigBuilder {
         String baseUrl = getParserAttributeAsString(XPATH_BASE_URL);
         String baseUrlDelimiter = getParserAttributeAsString(XPATH_BASE_URL_DELIMITER);
         String requestParams = getParserAttributeAsString(XPATH_REQUEST_PARAMS);
+        if("".equals(requestParams) || requestParams == null){
+            requestParams = getByXPath(XPATH_REQUEST_PARAMS_BODY);
+        }
         String method = getParserAttributeAsString(XPATH_METHOD);
         String encoding = getParserAttributeAsString(XPATH_ENCODING);
         String firstPageAsString = getParserAttributeAsString(XPATH_FIRST_PAGE);
@@ -147,8 +155,11 @@ public class PrimitiveConfigBuilder {
         String destination = getParserAttributeAsString(XPATH_DESTINATION);
         String firstLevelPattern = getByXPath(XPATH_FIRST_LEVEL_PATTERN).trim();
         String secondLevelPattern = getByXPath(XPATH_SECOND_LEVEL_PATTERN).trim();
-        String secondLevelName = !secondLevelPattern.equals("")? PrimitiveConfiguration.SECOND_LEVEL_NAME : "";
+        String secondLevelName = !secondLevelPattern.equals("") ? PrimitiveConfiguration.SECOND_LEVEL_NAME : "";
         String secondLevelBaseUrl = getParserAttributeAsString(XPATH_SECOND_LEVEL_BASE_URL);
+
+        String firstLevelParserType = getByXPath(XPATH_FIRST_LEVEL_PARSER_TYPE);
+        String secondLevelParserType = getByXPath(XPATH_SECOND_LEVEL_PARSER_TYPE);
 
         HttpMethods httpMethod = HttpMethods.GET;
         switch (method.toLowerCase()) {
@@ -190,6 +201,33 @@ public class PrimitiveConfigBuilder {
                 encoding,
                 delayInMillis
         );
+
+        // PARSER TYPES FOR 2 LEVELS
+        if (firstLevelParserType != null) {
+            switch (firstLevelParserType.toLowerCase()) {
+                default:
+                case "regex":
+                case "regexp":
+                    mConfiguration.firstLevelParserType = PrimitiveConfiguration.Parsers.REGEX;
+                    break;
+                case "xpath":
+                    mConfiguration.firstLevelParserType = PrimitiveConfiguration.Parsers.XPATH;
+                    break;
+            }
+        }
+
+        if (secondLevelParserType != null) {
+            switch (secondLevelParserType.toLowerCase()) {
+                default:
+                case "regex":
+                case "regexp":
+                    mConfiguration.secondLevelParserType = PrimitiveConfiguration.Parsers.REGEX;
+                    break;
+                case "xpath":
+                    mConfiguration.secondLevelParserType = PrimitiveConfiguration.Parsers.XPATH;
+                    break;
+            }
+        }
     }
 
     private void initRequestArguments() {
@@ -307,7 +345,7 @@ public class PrimitiveConfigBuilder {
         NodeList bindingsNodeList = (NodeList) getByXPath(xpathLevelBindings, XPathConstants.NODESET);
         if (bindingsNodeList != null) {
 
-            Map<String, String > bindings = new HashMap<>();
+            Map<String, String> bindings = new HashMap<>();
             String curDataName;
             String curFieldName;
             for (int i = 0; i < bindingsNodeList.getLength(); i++) {
