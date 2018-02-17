@@ -1,16 +1,22 @@
 package ru.romanbrazhnikov.agilescraper.sourceprovider;
 
 import io.reactivex.Single;
+import org.apache.commons.lang3.StringEscapeUtils;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.cookies.Cookie;
 
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.zip.GZIPInputStream;
 
 public class HttpSourceProvider {
 
@@ -55,12 +61,13 @@ public class HttpSourceProvider {
     }
 
     public Single<String> requestSource() {
+
         return Single.create(emitter -> {
             try {
                 // Proxy
                 Proxy proxy = null;
-                if(!PROXY_ADDRESS.isEmpty()) {
-                     proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(PROXY_ADDRESS, PROXY_PORTS));
+                if (!PROXY_ADDRESS.isEmpty()) {
+                    proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(PROXY_ADDRESS, PROXY_PORTS));
                 }
                 // opening connection
                 URL myURL = null;// = new URL(mBaseUrl);
@@ -73,9 +80,9 @@ public class HttpSourceProvider {
                     case GET:
                         myURL = new URL(mBaseUrl + (mQueryParamString != null ? mUrlDelimiter + mQueryParamString : ""));
                         // USE PROXY OR NOT
-                        if(proxy != null){
+                        if (proxy != null) {
                             httpConnection = (HttpURLConnection) myURL.openConnection(proxy);
-                        }else{
+                        } else {
                             httpConnection = (HttpURLConnection) myURL.openConnection();
                         }
                         addHeadersIfAny(httpConnection);
@@ -83,27 +90,40 @@ public class HttpSourceProvider {
                         break;
                     case POST:
                         myURL = new URL(mBaseUrl);
-                        byte[] postData = mQueryParamString.getBytes(StandardCharsets.UTF_8);
 
                         // USE PROXY OR NOT
-                        if(proxy != null){
+                        if (proxy != null) {
                             httpConnection = (HttpURLConnection) myURL.openConnection(proxy);
-                        }else{
+                        } else {
                             httpConnection = (HttpURLConnection) myURL.openConnection();
                         }
-                        httpConnection.setRequestProperty("User-Agent", "");
-                        httpConnection.setRequestProperty("Accept", "application/json, text/plain, */*");
+                        httpConnection.setDoOutput(true);// Triggers POST.
+
+                        if (mHeaders != null) {
+                            addHeadersIfAny(httpConnection);
+                        } else {
+                            httpConnection.setRequestProperty("User-Agent", "");
+                            httpConnection.setRequestProperty("Accept", "application/json, text/plain, */*");
+                            httpConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + StandardCharsets.UTF_8.displayName());
+                        }
+
                         httpConnection.setInstanceFollowRedirects(false);
-                        httpConnection.setDoOutput(true); // Triggers POST.
-                        httpConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + StandardCharsets.UTF_8.displayName());
-                        httpConnection.setUseCaches(false);
+                        httpConnection.setDoOutput(true);
+                        httpConnection.setReadTimeout(10000);
+                        httpConnection.setConnectTimeout(15000);
+                        httpConnection.setRequestMethod("POST");
+
+
                         addCookiesIfAny(httpConnection);
 
                         // Sending POST form
-                        try (OutputStream output = httpConnection.getOutputStream()) {
-                            output.write(postData);
-                        }
 
+                        DataOutputStream out = null;
+                        byte[] postData = mQueryParamString.trim().getBytes(StandardCharsets.UTF_8);
+                        out = new DataOutputStream(httpConnection.getOutputStream());
+                        out.write(postData);
+                        out.flush();
+                        out.close();
                         break;
                 }
 
@@ -111,44 +131,43 @@ public class HttpSourceProvider {
                 // setting encoding
                 // TODO: TBD setting encoding from server
 
-                // opening input stream from the connection
-                InputStream httpResponse = httpConnection.getInputStream();
+                // getting response
+                int status = httpConnection.getResponseCode();
+
+                // reading response body according encoding
+                BufferedReader bReader;
+                if ("gzip".equals(httpConnection.getContentEncoding())) {
+                    bReader = new BufferedReader(new InputStreamReader(new GZIPInputStream(httpConnection.getInputStream()), StandardCharsets.UTF_8));
+                } else {
+                    bReader = new BufferedReader(new InputStreamReader(httpConnection.getInputStream()));
+                }
+                String currentString = "";
+                StringBuffer httpResponseStringBuilder = new StringBuffer();
+
+                // building response string
+                while ((currentString = bReader.readLine()) != null) {
+                    httpResponseStringBuilder.append(currentString);
+                }
+
+                bReader.close();
+
+                //System.out.println(httpResponseStringBuilder.toString());
 
                 // getting headers
-                Set httpHeaders = httpConnection.getHeaderFields().keySet();
+                Set<String> httpHeaders = httpConnection.getHeaderFields().keySet();
 
                 // getting cookie headers
                 if (httpHeaders.contains("Set-Cookie")) {
                     mCookiesFromResponse = httpConnection.getHeaderFields().get("Set-Cookie");
                 }
 
-                // result html response
-                StringBuilder responseHtmlBuilder = new StringBuilder();
-
-                // trying to read from the input stream
-                try (Scanner responseScanner = new Scanner(httpResponse)) {
-                    // while there's something to read...
-                    while (responseScanner.hasNextLine()) {
-                        // reading current line
-                        responseHtmlBuilder.append(responseScanner.nextLine()).append("\n");
-                    }
-                    // closing the scanner after reading
-                    responseScanner.close();
-
-                    // returning result TODO: encoding conversion
-                    //ByteBuffer byteBuffer = (ByteBuffer)Charset.forName(mServerEncoding).encode(responseHtmlBuilder.toString()).limit(Integer.MAX_VALUE);
-                    emitter.onSuccess(responseHtmlBuilder.toString());
-                } catch (Exception e) {
-                    Exception exception = new Exception("HttpSourceProvider (Reading input stream): " + e.getMessage());
-                    exception.setStackTrace(e.getStackTrace());
-                    emitter.onError(exception);
-                } finally {
-                    // closing input stream
-                    httpResponse.close();
-                }
+                // SUCCESS CASE
+                String unescapedResponse = StringEscapeUtils.unescapeJava(httpResponseStringBuilder.toString());
+                //System.out.println(unescapedResponse);
+                emitter.onSuccess(unescapedResponse);
 
             } catch (Exception ex) {
-
+                // ERROR CASE
                 Exception exception = new Exception("HttpSourceProvider (requestSource): " + ex.getMessage());
                 exception.setStackTrace(ex.getStackTrace());
                 emitter.onError(exception);

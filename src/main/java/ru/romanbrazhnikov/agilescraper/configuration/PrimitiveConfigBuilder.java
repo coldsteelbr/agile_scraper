@@ -48,6 +48,7 @@ public class PrimitiveConfigBuilder {
     private static final String XPATH_REQUEST_PARAMS = "/Config/RequestParams/@value";
     private static final String XPATH_REQUEST_PARAMS_BODY = "/Config/RequestParams";
     private static final String XPATH_REQUEST_ARGUMENTS = "/Config/RequestArguments/Argument";
+    private static final String XPATH_HTTP_HEADERS = "/Config/Headers/Header";
     private static final String XPATH_METHOD = "/Config/Method/@value";
     private static final String XPATH_ENCODING = "/Config/Encoding/@value";
     private static final String XPATH_FIRST_PAGE = "/Config/FirstPage/@value";
@@ -125,6 +126,7 @@ public class PrimitiveConfigBuilder {
         int secondLevel = 2;
 
         initPrimitives();
+        initHeaders();
         initRequestArguments();
         initMarkers();
         initCookies();
@@ -138,12 +140,33 @@ public class PrimitiveConfigBuilder {
         return mConfiguration;
     }
 
+    private void initHeaders() {
+        // TODO: Init headers
+        Map<String, String> headers = new HashMap<>();
+        NodeList headerNodeList = (NodeList) getByXPath(XPATH_HTTP_HEADERS, XPathConstants.NODESET);
+
+        if (headerNodeList == null) {
+            return;
+        }
+
+
+        for (int i = 0; i < headerNodeList.getLength(); i++) {
+            Node currentHeader = headerNodeList.item(i);
+            String currentName = getByXPath("@name", currentHeader);
+            String currentValue = getByXPath("@value", currentHeader);
+
+            headers.put(currentName, currentValue);
+        }
+
+        mConfiguration.headers = headers;
+    }
+
     private void initPrimitives() {
         String configName = getParserAttributeAsString(XPATH_NAME);
         String baseUrl = getParserAttributeAsString(XPATH_BASE_URL);
         String baseUrlDelimiter = getParserAttributeAsString(XPATH_BASE_URL_DELIMITER);
         String requestParams = getParserAttributeAsString(XPATH_REQUEST_PARAMS);
-        if("".equals(requestParams) || requestParams == null){
+        if ("".equals(requestParams) || requestParams == null) {
             requestParams = getByXPath(XPATH_REQUEST_PARAMS_BODY);
         }
         String method = getParserAttributeAsString(XPATH_METHOD);

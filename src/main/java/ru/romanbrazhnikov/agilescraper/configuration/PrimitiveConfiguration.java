@@ -5,7 +5,10 @@ import ru.romanbrazhnikov.agilescraper.requestarguments.RequestArguments;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.cookies.Cookies;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class PrimitiveConfiguration {
     public static final String PAGE_NUM_NAME = "PAGENUM";
@@ -14,7 +17,7 @@ public class PrimitiveConfiguration {
     public static final String FIELD_DATE = "date";
     public static final String FIELD_SOURCE_NAME = "source_name";
 
-    public enum Parsers{
+    public enum Parsers {
         REGEX,
         XPATH
     }
@@ -28,8 +31,13 @@ public class PrimitiveConfiguration {
     public String urlDelimiter = "";
     public String sourceEncoding = "utf8";
     public HttpMethods method = HttpMethods.GET;
+
     // request params
     public String requestParams;
+
+    // http headers
+    public Map<String, String> httpHeaders;
+
     // request args
     public RequestArguments requestArguments = new RequestArguments();
 
@@ -67,7 +75,8 @@ public class PrimitiveConfiguration {
     public Map<String, String> firstLevelBindings;
     public Map<String, String> secondLevelBindings;
 
-    public PrimitiveConfiguration(){}
+    public PrimitiveConfiguration() {
+    }
 
     public PrimitiveConfiguration(
             String configName,
@@ -110,7 +119,7 @@ public class PrimitiveConfiguration {
         fields.addAll(firstLevelBindings.values());
 
         // adding 2nd level bindings
-        if(secondLevelBindings != null) {
+        if (secondLevelBindings != null) {
             fields.addAll(secondLevelBindings.values());
         }
 
@@ -118,7 +127,7 @@ public class PrimitiveConfiguration {
         fields.addAll(markers.keySet());
 
         // adding arguments
-        for(Argument currentArg : requestArguments.mArgumentList){
+        for (Argument currentArg : requestArguments.mArgumentList) {
             fields.add(currentArg.field);
         }
 
