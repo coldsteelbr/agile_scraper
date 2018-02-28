@@ -11,7 +11,9 @@
       <element id="library" level="project" name="Gradle: org.reactivestreams:reactive-streams:1.0.1" />
       <element id="library" level="project" name="Gradle: io.reactivex.rxjava2:rxjava:2.1.6" />
       <element id="library" level="project" name="mysql:mysql-connector-java:6.0.6" />
-      <element id="library" level="project" name="CommonParsers__main" />
+      <element id="library" level="project" name="Gradle: net.sourceforge.htmlcleaner:htmlcleaner:2.6" />
+      <element id="library" level="project" name="Gradle: com.google.code.gson:gson:2.8.2" />
+      <element id="library" level="project" name="Gradle: org.jsoup:jsoup:1.11.2" />
     </root>
   </artifact>
 </component>
