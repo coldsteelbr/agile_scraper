@@ -10,9 +10,8 @@
       </element>
       <element id="library" level="project" name="Gradle: org.reactivestreams:reactive-streams:1.0.1" />
       <element id="library" level="project" name="Gradle: io.reactivex.rxjava2:rxjava:2.1.6" />
-      <element id="file-copy" path="$PROJECT_DIR$/conf_spran_comm_sale.prs" />
-      <element id="file-copy" path="$PROJECT_DIR$/conf_spran_flat_sale.prs" />
       <element id="library" level="project" name="mysql:mysql-connector-java:6.0.6" />
+      <element id="library" level="project" name="CommonParsers__main" />
     </root>
   </artifact>
 </component>
