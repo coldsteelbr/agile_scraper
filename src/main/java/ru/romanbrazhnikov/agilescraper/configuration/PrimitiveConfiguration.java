@@ -19,7 +19,8 @@ public class PrimitiveConfiguration {
 
     public enum Parsers {
         REGEX,
-        XPATH
+        XPATH,
+        JSON
     }
 
     // config name
@@ -64,7 +65,7 @@ public class PrimitiveConfiguration {
 
     // second level specifics
     public String secondLevelName = null;
-    public String secondLevelBaseUrl;
+    public String secondLevelBaseUrl = "";
 
     // parser types
     public Parsers firstLevelParserType = Parsers.REGEX;

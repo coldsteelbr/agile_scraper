@@ -161,8 +161,14 @@ public class HttpSourceProvider {
                     mCookiesFromResponse = httpConnection.getHeaderFields().get("Set-Cookie");
                 }
 
+                // FIXME: make it optional
+                boolean doUnescape = false;
+
                 // SUCCESS CASE
-                String unescapedResponse = StringEscapeUtils.unescapeJava(httpResponseStringBuilder.toString());
+                String unescapedResponse = doUnescape?
+                        StringEscapeUtils.unescapeJava(httpResponseStringBuilder.toString()) :
+                        httpResponseStringBuilder.toString();
+
                 //System.out.println(unescapedResponse);
                 emitter.onSuccess(unescapedResponse);
 

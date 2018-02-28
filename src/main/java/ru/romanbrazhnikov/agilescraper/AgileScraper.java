@@ -12,10 +12,7 @@ import ru.romanbrazhnikov.agilescraper.resultsaver.OnSuccessParseConsumer;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpSourceProvider;
 import ru.romanbrazhnikov.agilescraper.utils.FileUtils;
-import ru.romanbrazhnikov.commonparsers.ICommonParser;
-import ru.romanbrazhnikov.commonparsers.ParseResult;
-import ru.romanbrazhnikov.commonparsers.RegExParser;
-import ru.romanbrazhnikov.commonparsers.XPathParser;
+import ru.romanbrazhnikov.commonparsers.*;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -80,7 +77,8 @@ public class AgileScraper {
                 firstLevelParser = new RegExParser();
                 break;
             case XPATH:
-                firstLevelParser = new XPathParser();
+                //firstLevelParser = new XPathParser();
+                firstLevelParser = new AnotherXPathParser();
                 break;
         }
         firstLevelParser.setMatchNames(configuration.firstLevelBindings.keySet());
@@ -95,7 +93,8 @@ public class AgileScraper {
                 secondLevelParser = new RegExParser();
                 break;
             case XPATH:
-                secondLevelParser = new XPathParser();
+                //secondLevelParser = new XPathParser();
+                secondLevelParser = new AnotherXPathParser();
                 break;
 
         }
@@ -272,7 +271,11 @@ public class AgileScraper {
             // getting second level for each first level row
             for (Map<String, String> curRow : parseResult.getResult()) {
                 secondLevelURL = curRow.get(PrimitiveConfiguration.FIELD_SUB_URL);
-                secondLevelProvider.setBaseUrl(configuration.secondLevelBaseUrl + secondLevelURL);
+                secondLevelProvider.setBaseUrl(
+                        (configuration.secondLevelBaseUrl == null ?
+                                "" :
+                                configuration.secondLevelBaseUrl)
+                        + secondLevelURL);
                 //delay
                 delayForAWhile(configuration);
                 // requesting second level
