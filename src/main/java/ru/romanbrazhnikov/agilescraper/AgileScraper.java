@@ -78,7 +78,7 @@ public class AgileScraper {
                 break;
             case XPATH:
                 //firstLevelParser = new XPathParser();
-                firstLevelParser = new AnotherXPathParser();
+                firstLevelParser = new JSoupXPathParser();
                 break;
         }
         firstLevelParser.setMatchNames(configuration.firstLevelBindings.keySet());
@@ -94,7 +94,7 @@ public class AgileScraper {
                 break;
             case XPATH:
                 //secondLevelParser = new XPathParser();
-                secondLevelParser = new AnotherXPathParser();
+                secondLevelParser = new JSoupXPathParser();
                 break;
 
         }
