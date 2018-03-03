@@ -3,6 +3,9 @@ package ru.romanbrazhnikov.agilescraper.sourceprovider;
 import io.reactivex.Single;
 import org.apache.commons.lang3.StringEscapeUtils;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.cookies.Cookie;
+import ru.romanbrazhnikov.agilescraper.sourceprovider.proxy.IpPort;
+import ru.romanbrazhnikov.agilescraper.sourceprovider.proxy.ProxyListRing;
+import ru.romanbrazhnikov.agilescraper.sourceprovider.proxy.ProxyListRingProvider;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -20,10 +23,18 @@ import java.util.zip.GZIPInputStream;
 
 public class HttpSourceProvider {
 
-    // PROXY
+    // TIME OUT
+    private static final int READ_TIME_OUT_MS = 60000;
+    private static final int CONNECT_TIME_OUT_MS = 70000;
 
-    private final String PROXY_ADDRESS = "";
-    private final int PROXY_PORTS = 8888;
+
+    // PROXY
+    private static final String PROXY_LIST_FILE = "proxy_list.txt";
+    private static final String PROXY_ADDRESS = "";
+    private static final int PROXY_PORTS = 8888;
+
+    private ProxyListRing mProxyListRing = ProxyListRingProvider.getInstance(PROXY_LIST_FILE);
+
 
     // TODO: Add encoding conversion
     // TODO: from server: ByteBuffer byteBuffer = Charset.forName("UTF-8").encode(myString)
@@ -64,11 +75,16 @@ public class HttpSourceProvider {
 
         return Single.create(emitter -> {
             try {
+                boolean useProxy = true;
                 // Proxy
                 Proxy proxy = null;
-                if (!PROXY_ADDRESS.isEmpty()) {
-                    proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(PROXY_ADDRESS, PROXY_PORTS));
+                if(mProxyListRing != null && useProxy) {
+                    IpPort ipPort = mProxyListRing.get();
+                    proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(ipPort.getIp(), ipPort.getPort()));
+                    System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2");
+
                 }
+
                 // opening connection
                 URL myURL = null;// = new URL(mBaseUrl);
                 HttpURLConnection httpConnection = null;// = (HttpURLConnection) myURL.openConnection();
@@ -85,8 +101,8 @@ public class HttpSourceProvider {
                         } else {
                             httpConnection = (HttpURLConnection) myURL.openConnection();
                         }
-                        httpConnection.setReadTimeout(10000);
-                        httpConnection.setConnectTimeout(15000);
+                        httpConnection.setReadTimeout(READ_TIME_OUT_MS);
+                        httpConnection.setConnectTimeout(CONNECT_TIME_OUT_MS);
                         addHeadersIfAny(httpConnection);
                         addCookiesIfAny(httpConnection);
                         break;
@@ -111,8 +127,8 @@ public class HttpSourceProvider {
 
                         httpConnection.setInstanceFollowRedirects(false);
                         httpConnection.setDoOutput(true);
-                        httpConnection.setReadTimeout(10000);
-                        httpConnection.setConnectTimeout(15000);
+                        httpConnection.setReadTimeout(READ_TIME_OUT_MS);
+                        httpConnection.setConnectTimeout(CONNECT_TIME_OUT_MS);
                         httpConnection.setRequestMethod("POST");
 
 
