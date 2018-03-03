@@ -85,6 +85,8 @@ public class HttpSourceProvider {
                         } else {
                             httpConnection = (HttpURLConnection) myURL.openConnection();
                         }
+                        httpConnection.setReadTimeout(10000);
+                        httpConnection.setConnectTimeout(15000);
                         addHeadersIfAny(httpConnection);
                         addCookiesIfAny(httpConnection);
                         break;
@@ -132,7 +134,7 @@ public class HttpSourceProvider {
                 // TODO: TBD setting encoding from server
 
                 // getting response
-                int status = httpConnection.getResponseCode();
+                //int status = httpConnection.getResponseCode();
 
                 // reading response body according encoding
                 BufferedReader bReader;
