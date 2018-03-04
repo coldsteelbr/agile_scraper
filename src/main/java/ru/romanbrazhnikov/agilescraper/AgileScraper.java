@@ -12,7 +12,10 @@ import ru.romanbrazhnikov.agilescraper.resultsaver.OnSuccessParseConsumer;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpSourceProvider;
 import ru.romanbrazhnikov.agilescraper.utils.FileUtils;
-import ru.romanbrazhnikov.commonparsers.*;
+import ru.romanbrazhnikov.commonparsers.ICommonParser;
+import ru.romanbrazhnikov.commonparsers.JSoupXPathParser;
+import ru.romanbrazhnikov.commonparsers.ParseResult;
+import ru.romanbrazhnikov.commonparsers.RegExParser;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -275,7 +278,7 @@ public class AgileScraper {
                         (configuration.secondLevelBaseUrl == null ?
                                 "" :
                                 configuration.secondLevelBaseUrl)
-                        + secondLevelURL);
+                                + secondLevelURL);
                 //delay
                 delayForAWhile(configuration);
                 // requesting second level
@@ -324,7 +327,7 @@ public class AgileScraper {
         HttpSourceProvider mySourceProvider = new HttpSourceProvider();
         mySourceProvider.setBaseUrl(configuration.baseUrl);
         mySourceProvider.setUrlDelimiter(configuration.urlDelimiter);
-        mySourceProvider.setClientCharset(configuration.sourceEncoding);
+        mySourceProvider.setSourceEncoding(configuration.sourceEncoding);
         mySourceProvider.setHttpMethod(configuration.method);
         // ... cookies
         if (configuration.cookies != null) {

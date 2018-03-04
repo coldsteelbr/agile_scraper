@@ -22,10 +22,13 @@ import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
 public class HttpSourceProvider {
+    static {
+        System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2");
+    }
 
     // TIME OUT
-    private static final int READ_TIME_OUT_MS = 60000;
-    private static final int CONNECT_TIME_OUT_MS = 70000;
+    private static final int READ_TIME_OUT_MS = 15000;
+    private static final int CONNECT_TIME_OUT_MS = 20000;
 
 
     // PROXY
@@ -46,8 +49,7 @@ public class HttpSourceProvider {
 
     private Map<String, String> mHeaders;
 
-    private String mClientCharset;
-    private String mServerEncoding = "utf-8";
+    private String mSourceEncoding = "utf8";
     private HttpMethods mHttpMethod = HttpMethods.GET;
     private String mQueryParamString;
 
@@ -59,8 +61,23 @@ public class HttpSourceProvider {
         mUrlDelimiter = urlDelimiter;
     }
 
-    public void setClientCharset(String clientCharset) {
-        mClientCharset = clientCharset;
+    public void setSourceEncoding(String sourceEncoding) {
+        switch (sourceEncoding.toLowerCase().replaceAll("\\s", "")) {
+            case "utf-8":
+            case "utf8":
+                mSourceEncoding = "UTF-8";
+                break;
+            case "windows-1251":
+            case "windows1251":
+            case "cp-1251":
+            case "cp1251":
+            case "1251":
+                mSourceEncoding = "Windows-1251";
+                break;
+            default:
+                mSourceEncoding = sourceEncoding;
+        }
+
     }
 
     public void setHttpMethod(HttpMethods httpMethod) {
@@ -75,14 +92,12 @@ public class HttpSourceProvider {
 
         return Single.create(emitter -> {
             try {
-                boolean useProxy = true;
+                boolean useProxy = false;
                 // Proxy
                 Proxy proxy = null;
-                if(mProxyListRing != null && useProxy) {
+                if (mProxyListRing != null && useProxy) {
                     IpPort ipPort = mProxyListRing.get();
                     proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(ipPort.getIp(), ipPort.getPort()));
-                    System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2");
-
                 }
 
                 // opening connection
@@ -157,7 +172,7 @@ public class HttpSourceProvider {
                 if ("gzip".equals(httpConnection.getContentEncoding())) {
                     bReader = new BufferedReader(new InputStreamReader(new GZIPInputStream(httpConnection.getInputStream()), StandardCharsets.UTF_8));
                 } else {
-                    bReader = new BufferedReader(new InputStreamReader(httpConnection.getInputStream()));
+                    bReader = new BufferedReader(new InputStreamReader(httpConnection.getInputStream(), mSourceEncoding));
                 }
                 String currentString = "";
                 StringBuffer httpResponseStringBuilder = new StringBuffer();
@@ -183,11 +198,10 @@ public class HttpSourceProvider {
                 boolean doUnescape = false;
 
                 // SUCCESS CASE
-                String unescapedResponse = doUnescape?
+                String unescapedResponse = doUnescape ?
                         StringEscapeUtils.unescapeJava(httpResponseStringBuilder.toString()) :
                         httpResponseStringBuilder.toString();
 
-                //System.out.println(unescapedResponse);
                 emitter.onSuccess(unescapedResponse);
 
             } catch (Exception ex) {
