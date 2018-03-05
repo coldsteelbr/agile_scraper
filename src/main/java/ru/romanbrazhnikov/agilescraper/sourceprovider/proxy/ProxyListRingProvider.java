@@ -22,7 +22,8 @@ public class ProxyListRingProvider {
                 mInstance = new ProxyListRing();
                 mInstance.selfPopulateFromProxyList(string);
             } catch (IOException e) {
-                e.printStackTrace();
+                System.out.printf("ProxyList file: \"%s\" not found\n", path);
+                return null;
             }
 
         }
