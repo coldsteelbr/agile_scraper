@@ -116,6 +116,7 @@ public class AgileScraper {
 
         // init second level provider
         HttpSourceProvider secondLevelProvider = new HttpSourceProvider();
+        secondLevelProvider.setSourceEncoding(configuration.sourceEncoding);
 
         // ACTUAL SAVER
         ICommonSaver ACTUAL_SAVER = null;

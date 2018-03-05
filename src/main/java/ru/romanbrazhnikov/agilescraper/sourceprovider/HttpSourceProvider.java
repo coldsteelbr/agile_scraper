@@ -170,7 +170,7 @@ public class HttpSourceProvider {
                 // reading response body according encoding
                 BufferedReader bReader;
                 if ("gzip".equals(httpConnection.getContentEncoding())) {
-                    bReader = new BufferedReader(new InputStreamReader(new GZIPInputStream(httpConnection.getInputStream()), StandardCharsets.UTF_8));
+                    bReader = new BufferedReader(new InputStreamReader(new GZIPInputStream(httpConnection.getInputStream()), mSourceEncoding));
                 } else {
                     bReader = new BufferedReader(new InputStreamReader(httpConnection.getInputStream(), mSourceEncoding));
                 }
