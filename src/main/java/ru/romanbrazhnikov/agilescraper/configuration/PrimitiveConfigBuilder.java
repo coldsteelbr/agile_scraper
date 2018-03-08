@@ -50,6 +50,8 @@ public class PrimitiveConfigBuilder {
     private static final String XPATH_REQUEST_ARGUMENTS = "/Config/RequestArguments/Argument";
     private static final String XPATH_HTTP_HEADERS = "/Config/Headers/Header";
     private static final String XPATH_METHOD = "/Config/Method/@value";
+    private static final String XPATH_USE_PROXY = "/Config/UseProxy/@value";
+    private static final String XPATH_PROXY_LIST_PATH = "/Config/UseProxy/@path";
     private static final String XPATH_ENCODING = "/Config/Encoding/@value";
     private static final String XPATH_FIRST_PAGE = "/Config/FirstPage/@value";
     private static final String XPATH_STEP = "/Config/mStep/@value";
@@ -170,6 +172,8 @@ public class PrimitiveConfigBuilder {
             requestParams = getByXPath(XPATH_REQUEST_PARAMS_BODY);
         }
         String method = getParserAttributeAsString(XPATH_METHOD);
+        String useProxy = getParserAttributeAsString(XPATH_USE_PROXY);
+        String proxyPath = getParserAttributeAsString(XPATH_PROXY_LIST_PATH);
         String encoding = getParserAttributeAsString(XPATH_ENCODING);
         String firstPageAsString = getParserAttributeAsString(XPATH_FIRST_PAGE);
         String stepAsString = getParserAttributeAsString(XPATH_STEP);
@@ -224,6 +228,21 @@ public class PrimitiveConfigBuilder {
                 encoding,
                 delayInMillis
         );
+
+        // Use Proxy
+        if (useProxy != null) {
+            switch (useProxy.toLowerCase()) {
+                case "yes":
+                case "true":
+                    mConfiguration.useProxy = true;
+                    mConfiguration.proxyListPath = proxyPath;
+                    break;
+                case "no":
+                case "false":
+                default:
+                    mConfiguration.useProxy = false;
+            }
+        }
 
         // PARSER TYPES FOR 2 LEVELS
         if (firstLevelParserType != null) {

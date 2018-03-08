@@ -4,8 +4,7 @@ import io.reactivex.Single;
 import org.apache.commons.lang3.StringEscapeUtils;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.cookies.Cookie;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.proxy.IpPort;
-import ru.romanbrazhnikov.agilescraper.sourceprovider.proxy.ProxyListRing;
-import ru.romanbrazhnikov.agilescraper.sourceprovider.proxy.ProxyListRingProvider;
+import ru.romanbrazhnikov.circular_queue.CircularQueue;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -30,28 +29,31 @@ public class HttpSourceProvider {
     private static final int READ_TIME_OUT_MS = 15000;
     private static final int CONNECT_TIME_OUT_MS = 20000;
 
-
-    // PROXY
-    private static final String PROXY_LIST_FILE = "proxy_list.txt";
-    private static final String PROXY_ADDRESS = "";
-    private static final int PROXY_PORTS = 8888;
-
-    private ProxyListRing mProxyListRing = ProxyListRingProvider.getInstance(PROXY_LIST_FILE);
-
-
     // TODO: Add encoding conversion
     // TODO: from server: ByteBuffer byteBuffer = Charset.forName("UTF-8").encode(myString)
     private String mBaseUrl = "";
     private String mUrlDelimiter = "";
 
+    // PROXY
+    private boolean mUseProxy = false;
+    private CircularQueue<IpPort> mProxyList;
+    // TODO: LOAD PROXY LIST
+
+    // Cookies
     private List<String> mCookiesToRequest;
     private List<String> mCookiesFromResponse;
 
+    // Headers
     private Map<String, String> mHeaders;
 
     private String mSourceEncoding = "utf8";
     private HttpMethods mHttpMethod = HttpMethods.GET;
     private String mQueryParamString;
+
+    public void setProxyList(CircularQueue<IpPort> proxyList) {
+        mProxyList = proxyList;
+        mUseProxy = mProxyList != null;
+    }
 
     public void setBaseUrl(String baseUrl) {
         mBaseUrl = baseUrl;
@@ -92,11 +94,10 @@ public class HttpSourceProvider {
 
         return Single.create(emitter -> {
             try {
-                boolean useProxy = false;
                 // Proxy
                 Proxy proxy = null;
-                if (mProxyListRing != null && useProxy) {
-                    IpPort ipPort = mProxyListRing.get();
+                if (mProxyList != null && mProxyList.getSize() > 0 && mUseProxy) {
+                    IpPort ipPort = mProxyList.reuse();
                     proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(ipPort.getIp(), ipPort.getPort()));
                 }
 

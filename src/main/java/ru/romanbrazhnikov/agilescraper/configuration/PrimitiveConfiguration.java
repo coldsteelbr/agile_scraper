@@ -32,6 +32,8 @@ public class PrimitiveConfiguration {
     public String urlDelimiter = "";
     public String sourceEncoding = "utf8";
     public HttpMethods method = HttpMethods.GET;
+    public boolean useProxy = false;
+    public String proxyListPath = "";
 
     // request params
     public String requestParams;

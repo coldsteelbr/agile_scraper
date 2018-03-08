@@ -11,7 +11,9 @@ import ru.romanbrazhnikov.agilescraper.resultsaver.MySQLSaver;
 import ru.romanbrazhnikov.agilescraper.resultsaver.OnSuccessParseConsumer;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
 import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpSourceProvider;
+import ru.romanbrazhnikov.agilescraper.sourceprovider.proxy.IpPort;
 import ru.romanbrazhnikov.agilescraper.utils.FileUtils;
+import ru.romanbrazhnikov.circular_queue.CircularQueue;
 import ru.romanbrazhnikov.commonparsers.ICommonParser;
 import ru.romanbrazhnikov.commonparsers.JSoupXPathParser;
 import ru.romanbrazhnikov.commonparsers.ParseResult;
@@ -66,10 +68,14 @@ public class AgileScraper {
             }
         }
 
+
+        CircularQueue<IpPort> ipPortList = readProxyListFromFile(configuration);
         // TODO: make a builder
         HttpSourceProvider mySourceProvider = initHttpSourceProvider(configuration);
         mySourceProvider.setHeaders(configuration.headers);
-
+        if (ipPortList != null) {
+            mySourceProvider.setProxyList(ipPortList);
+        }
 
         // init FIRST level parser
         // TODO: invert dependency or build
@@ -117,6 +123,9 @@ public class AgileScraper {
         // init second level provider
         HttpSourceProvider secondLevelProvider = new HttpSourceProvider();
         secondLevelProvider.setSourceEncoding(configuration.sourceEncoding);
+        if (ipPortList != null) {
+            secondLevelProvider.setProxyList(ipPortList);
+        }
 
         // ACTUAL SAVER
         ICommonSaver ACTUAL_SAVER = null;
@@ -236,6 +245,28 @@ public class AgileScraper {
         }
         while (configuration.requestArguments.paramProvider.generateNext());// while generateNext
     } // run()
+
+    private CircularQueue<IpPort> readProxyListFromFile(PrimitiveConfiguration configuration) {
+        if(!configuration.useProxy){
+            return null;
+        }
+
+        String proxyListString;
+        CircularQueue<IpPort> ipPortList = new CircularQueue<>();
+        try {
+
+            proxyListString = FileUtils.readFromFileToString(configuration.proxyListPath);
+            String[] splitByEOL = proxyListString.split("\\r?\\n|\\r");
+            for (String currentIpPortString : splitByEOL) {
+                ipPortList.add(new IpPort(currentIpPortString));
+            }
+
+        } catch (IOException e) {
+            System.err.println("Can't read proxy list file");
+            return null;
+        }
+        return ipPortList;
+    }
 
     private void delayForAWhile(PrimitiveConfiguration configuration) {
         // delay before starting requests

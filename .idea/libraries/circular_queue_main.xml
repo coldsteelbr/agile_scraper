@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="circular_queue_main">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../Circular Queue/out/artifacts/circular_queue_main_jar/circular_queue_main.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
