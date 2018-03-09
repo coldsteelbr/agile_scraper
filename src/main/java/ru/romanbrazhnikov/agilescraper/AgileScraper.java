@@ -46,7 +46,7 @@ public class AgileScraper {
     private static final String DB_NAME = "db_archive_service";
     private String DB_USER = "";
     private String DB_PASSWORD = "";
-    private static final String DB_URL = "jdbc:mysql://localhost/" + DB_NAME + "?useSSL=false&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC";
+    private static final String DB_URL = "jdbc:mysql://localhost/" + DB_NAME + "?useSSL=false&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC&jdbcCompliantTruncation=false";
 
     public void run(PrimitiveConfiguration configuration) {
 
