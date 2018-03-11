@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="httpsourceprovider_main">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../HttpSourceProvider/out/artifacts/httpsourceprovider_main_jar/httpsourceprovider_main.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

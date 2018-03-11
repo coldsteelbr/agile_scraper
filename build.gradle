@@ -24,7 +24,7 @@ dependencies {
     // GSON
     compile 'com.google.code.gson:gson:2.8.2'
 
-    // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
+    // Apache https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.0'
 
     // jsoup HTML parser library @ https://jsoup.org/

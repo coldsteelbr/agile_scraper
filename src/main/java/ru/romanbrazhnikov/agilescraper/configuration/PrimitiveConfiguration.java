@@ -2,8 +2,8 @@ package ru.romanbrazhnikov.agilescraper.configuration;
 
 import ru.romanbrazhnikov.agilescraper.requestarguments.Argument;
 import ru.romanbrazhnikov.agilescraper.requestarguments.RequestArguments;
-import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
-import ru.romanbrazhnikov.agilescraper.sourceprovider.cookies.Cookies;
+import ru.romanbrazhnikov.sourceprovider.HttpMethods;
+import ru.romanbrazhnikov.sourceprovider.cookies.Cookies;
 
 import java.util.HashMap;
 import java.util.HashSet;

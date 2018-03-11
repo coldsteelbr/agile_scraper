@@ -8,10 +8,10 @@ import org.xml.sax.SAXException;
 import ru.romanbrazhnikov.agilescraper.requestarguments.Argument;
 import ru.romanbrazhnikov.agilescraper.requestarguments.RequestArguments;
 import ru.romanbrazhnikov.agilescraper.requestarguments.Values;
-import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
-import ru.romanbrazhnikov.agilescraper.sourceprovider.cookies.Cookie;
-import ru.romanbrazhnikov.agilescraper.sourceprovider.cookies.CookieRules;
-import ru.romanbrazhnikov.agilescraper.sourceprovider.cookies.Cookies;
+import ru.romanbrazhnikov.sourceprovider.HttpMethods;
+import ru.romanbrazhnikov.sourceprovider.cookies.Cookie;
+import ru.romanbrazhnikov.sourceprovider.cookies.CookieRules;
+import ru.romanbrazhnikov.sourceprovider.cookies.Cookies;
 import ru.romanbrazhnikov.agilescraper.utils.FileUtils;
 
 import javax.xml.namespace.QName;

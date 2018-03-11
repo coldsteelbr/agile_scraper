@@ -3,10 +3,10 @@ package ru.romanbrazhnikov.agilescraper.hardcodedconfigs;
 import ru.romanbrazhnikov.agilescraper.configuration.PrimitiveConfiguration;
 import ru.romanbrazhnikov.agilescraper.requestarguments.Argument;
 import ru.romanbrazhnikov.agilescraper.requestarguments.Values;
-import ru.romanbrazhnikov.agilescraper.sourceprovider.HttpMethods;
-import ru.romanbrazhnikov.agilescraper.sourceprovider.cookies.Cookie;
-import ru.romanbrazhnikov.agilescraper.sourceprovider.cookies.CookieRules;
-import ru.romanbrazhnikov.agilescraper.sourceprovider.cookies.Cookies;
+import ru.romanbrazhnikov.sourceprovider.HttpMethods;
+import ru.romanbrazhnikov.sourceprovider.cookies.Cookie;
+import ru.romanbrazhnikov.sourceprovider.cookies.CookieRules;
+import ru.romanbrazhnikov.sourceprovider.cookies.Cookies;
 
 import java.util.ArrayList;
 import java.util.HashMap;
