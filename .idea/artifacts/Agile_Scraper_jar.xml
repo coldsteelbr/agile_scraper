@@ -16,6 +16,7 @@
       <element id="library" level="project" name="Gradle: org.jsoup:jsoup:1.11.2" />
       <element id="library" level="project" name="CommonParsers__main" />
       <element id="library" level="project" name="circular_queue_main" />
+      <element id="library" level="project" name="httpsourceprovider_main" />
     </root>
   </artifact>
 </component>
