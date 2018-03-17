@@ -9,17 +9,20 @@ import ru.romanbrazhnikov.agilescraper.resultsaver.CsvAdvancedSaver;
 import ru.romanbrazhnikov.agilescraper.resultsaver.ICommonSaver;
 import ru.romanbrazhnikov.agilescraper.resultsaver.MySQLSaver;
 import ru.romanbrazhnikov.agilescraper.resultsaver.OnSuccessParseConsumer;
-import ru.romanbrazhnikov.sourceprovider.HttpMethods;
-import ru.romanbrazhnikov.sourceprovider.HttpSourceProvider;
-import ru.romanbrazhnikov.sourceprovider.IpPort;
 import ru.romanbrazhnikov.agilescraper.utils.FileUtils;
 import ru.romanbrazhnikov.circular_queue.CircularQueue;
 import ru.romanbrazhnikov.commonparsers.ICommonParser;
 import ru.romanbrazhnikov.commonparsers.JSoupXPathParser;
 import ru.romanbrazhnikov.commonparsers.ParseResult;
 import ru.romanbrazhnikov.commonparsers.RegExParser;
+import ru.romanbrazhnikov.sourceprovider.HttpMethods;
+import ru.romanbrazhnikov.sourceprovider.HttpSourceProvider;
+import ru.romanbrazhnikov.sourceprovider.IpPort;
+import ru.romanbrazhnikov.sourceprovider.TryAgainHttpException;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -28,6 +31,7 @@ import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -70,12 +74,11 @@ public class AgileScraper {
 
 
         CircularQueue<IpPort> ipPortList = readProxyListFromFile(configuration);
+
         // TODO: make a builder
         HttpSourceProvider mySourceProvider = initHttpSourceProvider(configuration);
         mySourceProvider.setHeaders(configuration.headers);
-        if (ipPortList != null) {
-            mySourceProvider.setProxyList(ipPortList);
-        }
+
 
         // init FIRST level parser
         // TODO: invert dependency or build
@@ -123,9 +126,6 @@ public class AgileScraper {
         // init second level provider
         HttpSourceProvider secondLevelProvider = new HttpSourceProvider();
         secondLevelProvider.setSourceEncoding(configuration.sourceEncoding);
-        if (ipPortList != null) {
-            secondLevelProvider.setProxyList(ipPortList);
-        }
 
         // ACTUAL SAVER
         ICommonSaver ACTUAL_SAVER = null;
@@ -179,7 +179,7 @@ public class AgileScraper {
             // READING ALL PAGES
             //
             FinalBuffer<Boolean> isTerminated = new FinalBuffer<>(false);
-
+            FinalBuffer<Boolean> isTrying = new FinalBuffer<>(true);
             // walking through all pages
             for (int i = configuration.firstPageNum; (i <= maxPageValue) && !isTerminated.value; i += configuration.pageStep) {
 
@@ -190,49 +190,73 @@ public class AgileScraper {
                 delayForAWhile(configuration);
 
                 FinalBuffer<String> finalSource = new FinalBuffer<>();
-                // requesting source
-                mySourceProvider.requestSource().subscribe(source -> {
-                    // getting current date
 
-                    final String currentDateString = mDateFormat.format(Calendar.getInstance().getTime());
+                // ATTEMPTS WITH PROXIES
+                isTrying.value = true;
+                while (isTrying.value) {
+                    try {
+                        TimeUnit.SECONDS.sleep(1);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
 
-                    finalSource.value = source;
-                    // setting parser
-                    firstLevelParser.setSource(source);
+                    // Proxy
+                    if (ipPortList != null) {
+                        Proxy proxy;
+                        IpPort ipPort;
+                        ipPort = ipPortList.reuse();
+                        proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(ipPort.getIp(), ipPort.getPort()));
+                        mySourceProvider.setProxy(proxy);
+                    }
 
-                    // parsing
-                    firstLevelParser.parse()
-                            .timeout(2000, MILLISECONDS)
-                            // adding markers and arguments
-                            .map(parseResult -> addMarkersAndArguments(configuration, currentArgString, parseResult))
-                            // adding source name and date
-                            .map(parseResult -> {
+                    // requesting source
+                    mySourceProvider.requestSource().subscribe(source -> {
+                        // getting current date
 
-                                for (Map<String, String> currentRow : parseResult.getResult()) {
-                                    currentRow.put(PrimitiveConfiguration.FIELD_DATE, currentDateString);
-                                    currentRow.put(PrimitiveConfiguration.FIELD_SOURCE_NAME, configuration.configName);
-                                }
+                        final String currentDateString = mDateFormat.format(Calendar.getInstance().getTime());
 
-                                return parseResult;
-                            })
-                            // getting second level if necessary
-                            .map((ParseResult parseResult) -> {
-                                // if no second level set
-                                if (configuration.secondLevelName.equals("")) {
+                        finalSource.value = source;
+                        // setting parser
+                        firstLevelParser.setSource(source);
+
+                        // parsing
+                        firstLevelParser.parse()
+                                .timeout(2000, MILLISECONDS)
+                                // adding markers and arguments
+                                .map(parseResult -> addMarkersAndArguments(configuration, currentArgString, parseResult))
+                                // adding source name and date
+                                .map(parseResult -> {
+
+                                    for (Map<String, String> currentRow : parseResult.getResult()) {
+                                        currentRow.put(PrimitiveConfiguration.FIELD_DATE, currentDateString);
+                                        currentRow.put(PrimitiveConfiguration.FIELD_SOURCE_NAME, configuration.configName);
+                                    }
+
                                     return parseResult;
-                                }
-                                // get second level
-                                return getSecondLevel(configuration, secondLevelParser, secondLevelProvider, parseResult);
-                            })
-                            .subscribe(onSuccessConsumer, throwable -> {
-                                if (throwable instanceof TimeoutException) {
-                                    System.out.println("First level parsing TIME OUT ERROR");
-                                    throwable.printStackTrace();
-                                    isTerminated.value = true;
-                                }
-                            }).dispose();
-
-                }).dispose();
+                                })
+                                // getting second level if necessary
+                                .map((ParseResult parseResult) -> {
+                                    // if no second level set
+                                    if (configuration.secondLevelName.equals("")) {
+                                        return parseResult;
+                                    }
+                                    // get second level
+                                    return parseResult; // FIXME: TURN ON SECOND LEVEL!!!!
+                                    //return getSecondLevel(configuration, secondLevelParser, secondLevelProvider, parseResult);
+                                })
+                                .subscribe(onSuccessConsumer, throwable -> {
+                                    if (throwable instanceof TimeoutException) {
+                                        System.out.println("First level parsing TIME OUT ERROR");
+                                        throwable.printStackTrace();
+                                        isTerminated.value = true;
+                                    }
+                                }).dispose();
+                        isTrying.value = false; // STOP TRYING
+                    }, throwable -> {
+                        isTrying.value = throwable instanceof TryAgainHttpException;
+                        System.err.println(throwable.getMessage());
+                    }).dispose();
+                }
                 if (isTerminated.value) {
                     return;
                 }
@@ -241,13 +265,14 @@ public class AgileScraper {
                     //  PAGE COUNT
                     maxPageValue = getMaxPageValue(finalSource.value, configuration.firstPageNum, pageCountParser);
                 }
+
             } // for firstPageNum
         }
         while (configuration.requestArguments.paramProvider.generateNext());// while generateNext
     } // run()
 
     private CircularQueue<IpPort> readProxyListFromFile(PrimitiveConfiguration configuration) {
-        if(!configuration.useProxy){
+        if (!configuration.useProxy) {
             return null;
         }
 
