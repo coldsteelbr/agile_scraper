@@ -52,6 +52,8 @@ public class AgileScraper {
     private String DB_PASSWORD = "";
     private static final String DB_URL = "jdbc:mysql://localhost/" + DB_NAME + "?useSSL=false&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC&jdbcCompliantTruncation=false";
 
+    private CircularQueue<IpPort> mIpPortList;
+
     public void run(PrimitiveConfiguration configuration) {
 
         System.out.println("Agile scraper ran");
@@ -73,7 +75,7 @@ public class AgileScraper {
         }
 
 
-        CircularQueue<IpPort> ipPortList = readProxyListFromFile(configuration);
+        mIpPortList = readProxyListFromFile(configuration);
 
         // TODO: make a builder
         HttpSourceProvider mySourceProvider = initHttpSourceProvider(configuration);
@@ -201,10 +203,10 @@ public class AgileScraper {
                     }
 
                     // Proxy
-                    if (ipPortList != null) {
+                    if (mIpPortList != null) {
                         Proxy proxy;
                         IpPort ipPort;
-                        ipPort = ipPortList.reuse();
+                        ipPort = mIpPortList.reuse();
                         proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(ipPort.getIp(), ipPort.getPort()));
                         mySourceProvider.setProxy(proxy);
                     }
@@ -241,8 +243,8 @@ public class AgileScraper {
                                         return parseResult;
                                     }
                                     // get second level
-                                    return parseResult; // FIXME: TURN ON SECOND LEVEL!!!!
-                                    //return getSecondLevel(configuration, secondLevelParser, secondLevelProvider, parseResult);
+                                    //return parseResult; // FIXME: TURN ON SECOND LEVEL!!!!
+                                    return getSecondLevel(configuration, secondLevelParser, secondLevelProvider, parseResult);
                                 })
                                 .subscribe(onSuccessConsumer, throwable -> {
                                     if (throwable instanceof TimeoutException) {
@@ -328,6 +330,7 @@ public class AgileScraper {
         // if there's need for second level...
         if (configuration.secondLevelName != null && !configuration.secondLevelName.isEmpty()) {
             String secondLevelURL;
+            FinalBuffer<Boolean> isTrying = new FinalBuffer<>(true);
             // getting second level for each first level row
             for (Map<String, String> curRow : parseResult.getResult()) {
                 secondLevelURL = curRow.get(PrimitiveConfiguration.FIELD_SUB_URL);
@@ -336,23 +339,45 @@ public class AgileScraper {
                                 "" :
                                 configuration.secondLevelBaseUrl)
                                 + secondLevelURL);
-                //delay
-                delayForAWhile(configuration);
-                // requesting second level
-                secondLevelProvider.requestSource()
-                        .subscribe(secondLevelSource -> {
-                            // parsing second level
-                            secondLevelParser.setSource(secondLevelSource);
-                            secondLevelParser.parse()
-                                    .subscribe(secondLevelParseResult -> {
-                                        // adding second level result to a total result
-                                        for (Map<String, String> SL_curRow : secondLevelParseResult.getResult()) {
-                                            for (String curName : configuration.secondLevelBindings.values()) {
-                                                curRow.put(curName, SL_curRow.get(curName));
+
+                isTrying.value = true;
+                while (isTrying.value) {
+                    try {
+                        TimeUnit.SECONDS.sleep(1);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    // Proxy
+                    if (mIpPortList != null) {
+                        Proxy proxy;
+                        IpPort ipPort;
+                        ipPort = mIpPortList.reuse();
+                        proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(ipPort.getIp(), ipPort.getPort()));
+                        secondLevelProvider.setProxy(proxy);
+                    }
+                    //delay
+                    delayForAWhile(configuration);
+                    // requesting second level
+                    secondLevelProvider.requestSource()
+                            .subscribe(secondLevelSource -> {
+                                // parsing second level
+                                secondLevelParser.setSource(secondLevelSource);
+                                secondLevelParser.parse()
+                                        .subscribe(secondLevelParseResult -> {
+                                            // adding second level result to a total result
+                                            for (Map<String, String> SL_curRow : secondLevelParseResult.getResult()) {
+                                                for (String curName : configuration.secondLevelBindings.values()) {
+                                                    curRow.put(curName, SL_curRow.get(curName));
+                                                }
                                             }
-                                        }
-                                    }).dispose();
-                        }).dispose();
+                                        }).dispose();
+                                isTrying.value = false;
+                            }, throwable -> {
+                                isTrying.value = throwable instanceof TryAgainHttpException;
+                                System.err.println(throwable.getMessage());
+                            }).dispose();
+                } // while (isTrying.value)
             }
         }
         return parseResult;
