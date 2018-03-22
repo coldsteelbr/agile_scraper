@@ -2,7 +2,6 @@ package ru.romanbrazhnikov.agilescraper;
 
 import io.reactivex.functions.Consumer;
 import ru.romanbrazhnikov.agilescraper.configuration.PrimitiveConfiguration;
-import ru.romanbrazhnikov.agilescraper.hardcodedconfigs.HardcodedConfigFactory;
 import ru.romanbrazhnikov.agilescraper.pagecount.PageCountProvider;
 import ru.romanbrazhnikov.agilescraper.paramstringgenerator.ArgumentedParamString;
 import ru.romanbrazhnikov.agilescraper.resultsaver.CsvAdvancedSaver;
@@ -186,7 +185,7 @@ public class AgileScraper {
             for (int i = configuration.firstPageNum; (i <= maxPageValue) && !isTerminated.value; i += configuration.pageStep) {
 
                 // setting params for source provider
-                mySourceProvider.setQueryParamString(currentParamString.replace(HardcodedConfigFactory.PARAM_PAGE, String.valueOf(i)));
+                mySourceProvider.setQueryParamString(currentParamString.replace(PrimitiveConfiguration.PARAM_PAGE, String.valueOf(i)));
 
                 // delay
                 delayForAWhile(configuration);
@@ -223,7 +222,7 @@ public class AgileScraper {
 
                         // parsing
                         firstLevelParser.parse()
-                                .timeout(2000, MILLISECONDS)
+                                .timeout(5000, MILLISECONDS)
                                 // adding markers and arguments
                                 .map(parseResult -> addMarkersAndArguments(configuration, currentArgString, parseResult))
                                 // adding source name and date

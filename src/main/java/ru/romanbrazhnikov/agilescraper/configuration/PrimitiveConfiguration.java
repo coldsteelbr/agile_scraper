@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class PrimitiveConfiguration {
+    public static final String PARAM_PAGE = "{[PAGE]}";
     public static final String PAGE_NUM_NAME = "PAGENUM";
     public static final String SECOND_LEVEL_NAME = "SECONDLEVEL";
     public static final String FIELD_SUB_URL = "sub_url";
