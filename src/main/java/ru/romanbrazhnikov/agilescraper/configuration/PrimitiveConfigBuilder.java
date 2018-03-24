@@ -8,11 +8,11 @@ import org.xml.sax.SAXException;
 import ru.romanbrazhnikov.agilescraper.requestarguments.Argument;
 import ru.romanbrazhnikov.agilescraper.requestarguments.RequestArguments;
 import ru.romanbrazhnikov.agilescraper.requestarguments.Values;
+import ru.romanbrazhnikov.agilescraper.utils.FileUtils;
 import ru.romanbrazhnikov.sourceprovider.HttpMethods;
 import ru.romanbrazhnikov.sourceprovider.cookies.Cookie;
 import ru.romanbrazhnikov.sourceprovider.cookies.CookieRules;
 import ru.romanbrazhnikov.sourceprovider.cookies.Cookies;
-import ru.romanbrazhnikov.agilescraper.utils.FileUtils;
 
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
@@ -68,7 +68,7 @@ public class PrimitiveConfigBuilder {
     private static final String XPATH_SECOND_LEVEL_BASE_URL = "/Config/SecondLevelBaseUrl/@value";
     private static final String XPATH_FIRST_LEVEL_PARSER_TYPE = "/Config/FirstLevelPattern/@parser";
     private static final String XPATH_SECOND_LEVEL_PARSER_TYPE = "/Config/SecondLevelPattern/@parser";
-
+    private static final String XPATH_XML_NAMESPACES = "/Config/XmlNamespaces/Namespace";
 
     //
     // System fields
@@ -138,7 +138,7 @@ public class PrimitiveConfigBuilder {
             mConfiguration.firstLevelBindings.put(mConfiguration.secondLevelName, PrimitiveConfiguration.FIELD_SUB_URL);
         }
         initDataFieldBinding(secondLevel);
-
+        initXmlNamespaces();
         return mConfiguration;
     }
 
@@ -409,6 +409,25 @@ public class PrimitiveConfigBuilder {
                     mErrorMessage = "Unknown level code for binding";
                     return;
             }
+        }
+    }
+
+    private void initXmlNamespaces() {
+        NodeList namespaceNodeList = (NodeList) getByXPath(XPATH_XML_NAMESPACES, XPathConstants.NODESET);
+        if (namespaceNodeList != null) {
+            mConfiguration.namespaces = new HashMap<>();
+            String alias;
+            String name;
+
+            for (int nodeNum = 0; nodeNum < namespaceNodeList.getLength(); nodeNum++) {
+                // getting necessary attributes
+                alias = getByXPath("@alias", namespaceNodeList.item(nodeNum));
+                name = getByXPath("@name", namespaceNodeList.item(nodeNum));
+
+                // adding marker to the configuration
+                mConfiguration.namespaces.put(alias, name);
+            }
+
         }
     }
 

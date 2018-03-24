@@ -17,12 +17,13 @@ public class OnSuccessParseConsumer implements Consumer<ParseResult> {
 
     @Override
     public void accept(ParseResult parseResult) {
-
+        //System.out.println(parseResult.getNiceLook()); // FIXME: REMOVE THIS!!!!
         // todo: free resources by complete
         mSaver.save(parseResult)
                 .subscribe(() -> {
                         }, throwable -> {
-                            System.out.println("OnSuccessParserConsumer saving error:");
+                            System.err.println("OnSuccessParserConsumer saving error:");
+                            System.err.println(parseResult.getNiceLook());
                             throwable.printStackTrace();
                         }
 

@@ -62,6 +62,9 @@ public class PrimitiveConfiguration {
     // destination
     public String destinationName;
 
+    // xml namespaces
+    public Map<String, String> namespaces = null;
+
     // level patterns
     public String firstLevelPattern;
     public String secondLevelPattern;
